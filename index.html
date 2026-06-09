@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SweetLedger — Candy POS</title>
+<!-- Changed font import to Geist (similar to Phantom Wallet design language) -->
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --bg2: #16161a;
+    --bg3: #1e1e24;
+    --bg4: #26262f;
+    --card: #1a1a20;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eff4;
+    --text2: #9997a8;
+    --text3: #5e5c6e;
+    --pink: #ffb3c6;
+    --pink2: #ff8fab;
+    --mint: #b5ead7;
+    --mint2: #7dcea0;
+    --lav: #c9b8ff;
+    --lav2: #a78bfa;
+    --peach: #ffd6a5;
+    --peach2: #ffb347;
+    --yellow: #fff3b0;
+    --red: #ff6b6b;
+    --green: #69db7c;
+    --green2: #40c057;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --shadow2: 0 2px 8px rgba(0,0,0,0.3);
+    --radius: 18px;
+    --radius2: 12px;
+    --radius3: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  /* Updated global font to match Phantom Wallet style */
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Geist', sans-serif; overflow: hidden; }
+
+  /* APP SHELL */
+  #app { width: 100%; max-width: 430px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; position: relative; overflow: hidden; background: var(--bg); }
+
+  /* VIEWS */
+  .view { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(12px); overflow: hidden; }
+  .view.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+  /* SCROLLABLE CONTENT AREA */
+  .scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 90px; -webkit-overflow-scrolling: touch; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* TOP BAR */
+  .topbar { padding: 12px 12px 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--lav)); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .logo-label { display: flex; flex-direction: column; }
+  .logo-name { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.05em; }
+  .logo-sub { font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 4px; }
+  .topbar-actions { display: flex; gap: 12px; align-items: center; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text2); transition: all 0.2s; }
+  .icon-btn:active { transform: scale(0.92); background: var(--bg4); }
+
+  /* HERO BALANCE */
+  .hero { padding: 10px 30px 30px; text-align: center; }
+  .hero-label { font-size: 12px; color: var(--text3); font-family: 'Geist Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  /* Replaced DM Serif Display font with Geist font */
+  .hero-amount { font-family: 'Geist', sans-serif; font-size: 52px; font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -1px; }
+  .hero-amount .currency { font-size: 22px; vertical-align: super; margin-right: 2px; color: var(--text2); font-family: 'Geist', sans-serif; font-weight: 600; }
+  .hero-change { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+  .hero-change .pos { color: var(--green); font-size: 14px; font-family: 'Geist Mono', monospace; font-weight: 500; }
+  .hero-change .neg { color: var(--red); font-size: 14px; font-family: 'Geist Mono', monospace; font-weight: 500; }
+  .hero-change .pill { background: rgba(105,219,124,0.12); color: var(--green); font-size: 12px; padding: 3px 10px; border-radius: 20px; font-family: 'Geist Mono', monospace; font-weight: 500; }
+  .hero-change .pill.neg { background: rgba(255,107,107,0.12); color: var(--red); }
+  .hero-date { font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; margin-top: 4px; }
+
+  /* QUICK ACTIONS */
+  .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 16px 20px; }
+  .qa-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; }
+  .qa-btn:active { transform: scale(0.94); background: var(--bg4); }
+  .qa-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .qa-icon.pink { background: rgba(255,179,198,0.15); }
+  .qa-icon.mint { background: rgba(181,234,215,0.15); }
+  .qa-icon.lav { background: rgba(201,184,255,0.15); }
+  .qa-icon.peach { background: rgba(255,214,165,0.15); }
+  .qa-label { font-size: 11px; color: var(--text2); font-weight: 600; letter-spacing: 0.02em; }
+
+  /* SECTION HEADER */
+  .sec-header { padding: 0 20px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .sec-title { font-size: 13px; font-weight: 700; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .sec-action { font-size: 12px; color: var(--lav2); font-weight: 600; cursor: pointer; }
+
+  /* FLAVOR CARDS (like token list) */
+  .flavor-list { padding: 0 16px; display: flex; flex-direction: column; gap: 6px; }
+  .flavor-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s; }
+  .flavor-card:active { background: var(--bg3); }
+  .flavor-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .flavor-info { flex: 1; min-width: 0; }
+  .flavor-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .flavor-sub { font-size: 12px; color: var(--text2); font-family: 'Geist Mono', monospace; margin-top: 1px; }
+  .flavor-right { text-align: right; flex-shrink: 0; }
+  .flavor-val { font-size: 15px; font-weight: 700; color: var(--text); font-family: 'Geist Mono', monospace; }
+  .flavor-change { font-size: 12px; font-family: 'Geist Mono', monospace; margin-top: 1px; }
+  .flavor-change.pos { color: var(--green); }
+  .flavor-change.neg { color: var(--red); }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  /* Replaced DM Serif Display font with Geist font */
+  .stat-val { font-size: 22px; font-family: 'Geist', sans-serif; font-weight: 700; color: var(--text); }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.lav { color: var(--lav); }
+  .stat-val.peach { color: var(--peach); }
+  .stat-sub { font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; margin-top: 3px; }
+
+  /* BOTTOM NAV */
+  .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15,15,17,0.92); backdrop-filter: blur(20px); border-top: 1px solid var(--border); padding: 10px 0px; display: flex; justify-content: space-around; z-index: 100; flex-shrink: 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 16px; transition: all 0.2s; }
+  .nav-item:active { transform: scale(0.9); }
+  .nav-icon { font-size: 20px; opacity: 0.4; transition: all 0.2s; }
+  .nav-label { font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: 0.05em; transition: all 0.2s; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-item.active .nav-label { color: var(--lav); }
+
+  /* MODAL OVERLAY */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-sheet { background: var(--bg2); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 0 0 40px; max-height: 90dvh; overflow-y: auto; transform: translateY(40px); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: var(--bg4); border-radius: 2px; margin: 12px auto 20px; }
+  .modal-title { font-size: 18px; font-weight: 700; padding: 0 20px 16px; border-bottom: 1px solid var(--border); }
+  .modal-body { padding: 20px; }
+
+  /* INPUTS */
+  .field { margin-bottom: 16px; }
+  .field label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  .field input, .field select, .field textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius3); color: var(--text); font-family: 'Geist', sans-serif; font-size: 15px; padding: 12px 14px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--lav2); }
+  .field select option { background: var(--bg3); }
+  .field textarea { resize: vertical; min-height: 72px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* NUMPAD */
+  .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+  .np-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius2); height: 56px; font-size: 20px; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .np-btn:active { transform: scale(0.93); background: var(--bg4); }
+  .np-btn.action { background: rgba(201,184,255,0.12); color: var(--lav); border-color: rgba(201,184,255,0.2); }
+  .np-btn.confirm { background: linear-gradient(135deg, var(--mint), var(--lav)); color: #111; font-size: 18px; border: none; }
+  /* Replaced DM Serif Display font with Geist font */
+  .np-display { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius2); padding: 16px; text-align: right; font-family: 'Geist', sans-serif; font-weight: 700; font-size: 36px; color: var(--text); min-height: 70px; display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .np-display .np-placeholder { color: var(--text3); font-size: 20px; font-family: 'Geist', sans-serif; font-weight: 400; }
+
+  /* POS VIEW */
+  .pos-header { padding: 10px 10px 10px; }
+  .pos-title { font-size: 22px; font-weight: 800; }
+  .pos-subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .pos-tabs { display: flex; gap: 8px; padding: 0 16px 16px; }
+  .pos-tab { flex: 1; padding: 10px; border-radius: var(--radius3); font-size: 13px; font-weight: 700; text-align: center; cursor: pointer; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); transition: all 0.2s; }
+  .pos-tab.active { background: var(--lav2); color: #111; border-color: transparent; }
+
+  .sale-type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 16px 16px; }
+  .sale-toggle-btn { padding: 12px; border-radius: var(--radius3); text-align: center; font-weight: 700; font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); transition: all 0.2s; }
+  .sale-toggle-btn.active.box { background: rgba(255,179,198,0.2); color: var(--pink); border-color: rgba(255,179,198,0.3); }
+  .sale-toggle-btn.active.piece { background: rgba(181,234,215,0.2); color: var(--mint); border-color: rgba(181,234,215,0.3); }
+
+  .flavor-select-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 0 16px 16px; }
+  .fs-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px; cursor: pointer; transition: all 0.2s; }
+  .fs-card.selected { border-color: var(--lav2); background: rgba(167,139,250,0.1); }
+  .fs-card:active { transform: scale(0.96); }
+  .fs-emoji { font-size: 24px; margin-bottom: 6px; }
+  .fs-name { font-size: 13px; font-weight: 700; color: var(--text); }
+  .fs-stock { font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; margin-top: 2px; }
+  .fs-price { font-size: 13px; color: var(--lav); font-family: 'Geist Mono', monospace; font-weight: 600; }
+
+  /* INVENTORY VIEW */
+  .inv-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius2); padding: 16px; margin: 0 16px 8px; }
+  .inv-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .inv-card-name { display: flex; align-items: center; gap: 10px; }
+  .inv-card-emoji { font-size: 22px; }
+  .inv-card-label { font-size: 15px; font-weight: 700; }
+  .inv-card-label small { display: block; font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; font-weight: 400; margin-top: 1px; }
+  .inv-actions { display: flex; gap: 6px; }
+  .inv-act-btn { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s; }
+  .inv-act-btn:active { transform: scale(0.88); }
+  .inv-act-btn.edit { background: rgba(201,184,255,0.15); color: var(--lav); }
+  .inv-act-btn.del { background: rgba(255,107,107,0.12); color: var(--red); }
+  .inv-bar-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .inv-bar { background: var(--bg3); border-radius: 8px; padding: 8px 10px; }
+  .inv-bar-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Geist Mono', monospace; }
+  .inv-bar-val { font-size: 16px; font-weight: 700; margin-top: 2px; font-family: 'Geist Mono', monospace; }
+  .inv-bar-val.green { color: var(--green); }
+  .inv-bar-val.red { color: var(--red); }
+  .inv-bar-val.lav { color: var(--lav); }
+
+  /* LOG VIEW */
+  .log-date-header { padding: 10px 10px 10px; font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; }
+  .log-entry { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius3); margin: 0 16px 6px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .log-dot.sale { background: var(--green); }
+  .log-dot.stock { background: var(--lav); }
+  .log-dot.adjust { background: var(--peach); }
+  .log-info { flex: 1; min-width: 0; }
+  .log-desc { font-size: 13px; font-weight: 600; color: var(--text); }
+  .log-time { font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; margin-top: 1px; }
+  .log-amount { font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .log-amount.pos { color: var(--green); }
+  .log-amount.neg { color: var(--red); }
+  .log-amount.neutral { color: var(--lav); }
+
+  /* CALENDAR VIEW */
+  .cal-header { padding: 10px 10px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .cal-month-nav { display: flex; align-items: center; gap: 14px; }
+  .cal-month-name { font-size: 20px; font-weight: 800; }
+  .cal-month-name { font-size: 20px; font-weight: 800; }
+  .cal-nav-btn { width: 32px; height: 32px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text2); font-size: 14px; transition: all 0.2s; }
+  .cal-nav-btn:active { transform: scale(0.9); }
+  .cal-year { font-size: 12px; color: var(--text3); font-family: 'Geist Mono', monospace; }
+
+  .cal-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 12px; margin-bottom: 6px; }
+  .cal-day-name { text-align: center; font-size: 11px; color: var(--text3); font-weight: 700; letter-spacing: 0.05em; padding: 6px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; padding: 0 12px; }
+  .cal-cell { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; padding: 2px; position: relative; }
+  .cal-cell:active { transform: scale(0.9); }
+  .cal-cell.empty { pointer-events: none; }
+  .cal-cell.today { background: rgba(201,184,255,0.15); border: 1px solid rgba(201,184,255,0.3); }
+  .cal-cell.has-data { background: var(--bg3); }
+  .cal-cell.profit { background: rgba(105,219,124,0.1); }
+  .cal-cell.loss { background: rgba(255,107,107,0.08); }
+  .cal-cell.selected { border: 1px solid var(--lav2); }
+  .cal-day-num { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .cal-cell.today .cal-day-num { color: var(--lav); font-weight: 700; }
+  .cal-cell-dot { width: 4px; height: 4px; border-radius: 50%; margin-top: 2px; }
+
+  /* New internal micro layout elements added to map custom layout fields matching configurations */
+  .cal-day-pnl-label { font-size: 9px; font-family: 'Geist Mono', monospace; font-weight: 700; margin-top: 1px; width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cal-day-pnl-label.red { color: var(--red); }
+  .cal-day-pnl-label.green { color: var(--green); }
+
+  .cal-day-detail { margin: 12px 16px 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius2); padding: 16px; }
+  .cal-detail-date { font-size: 13px; color: var(--text2); font-family: 'Geist Mono', monospace; margin-bottom: 12px; }
+  .cal-detail-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .cal-detail-row:last-child { border-bottom: none; }
+  .cal-detail-label { font-size: 13px; color: var(--text2); }
+  .cal-detail-val { font-size: 14px; font-weight: 700; font-family: 'Geist Mono', monospace; }
+  .cal-detail-val.green { color: var(--green); }
+  .cal-detail-val.red { color: var(--red); }
+  .cal-detail-val.lav { color: var(--lav); }
+
+  /* SETTINGS VIEW */
+  .settings-section { padding: 0 16px 8px; }
+  .settings-section-title { font-size: 11px; color: var(--text3); font-family: 'Geist Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; padding: 16px 0 8px; }
+  .settings-row { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+  .settings-row:active { background: var(--bg3); }
+  .settings-row-left { flex: 1; }
+  .settings-row-label { font-size: 14px; font-weight: 600; }
+  .settings-row-sub { font-size: 12px; color: var(--text2); font-family: 'Geist Mono', monospace; margin-top: 2px; }
+  .settings-row-right { color: var(--text3); font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .settings-val { font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--lav); }
+
+  /* TOGGLE */
+  .toggle { width: 44px; height: 24px; border-radius: 12px; background: var(--bg4); position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+  .toggle.on { background: var(--lav2); }
+  .toggle::after { content: ''; width: 18px; height: 18px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; transition: transform 0.2s; }
+  .toggle.on::after { transform: translateX(20px); }
+
+  /* BUTTONS */
+  .btn { width: 100%; padding: 15px; border-radius: var(--radius2); font-family: 'Geist', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: linear-gradient(135deg, var(--lav), var(--mint)); color: #111; }
+  .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
+  .btn-danger { background: rgba(255,107,107,0.15); color: var(--red); border: 1px solid rgba(255,107,107,0.2); }
+  .btn-pink { background: linear-gradient(135deg, var(--pink), var(--peach)); color: #111; }
+
+  /* NOTIFICATION BADGE */
+  .notif-badge { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; background: var(--red); font-size: 10px; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+  /* TOAST */
+  #toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--bg3); border: 1px solid var(--border2); border-radius: 24px; padding: 10px 20px; font-size: 13px; color: var(--text); z-index: 999; opacity: 0; transition: all 0.3s; white-space: nowrap; pointer-events: none; max-width: calc(100% - 40px); text-align: center; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 30px; color: var(--text3); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; line-height: 1.6; }
+
+  /* LOADING */
+  .shimmer { background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* MISC */
+  .divider { height: 1px; background: var(--border); margin: 8px 16px; }
+  .spacer { height: 16px; }
+  .pill-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-family: 'Geist Mono', monospace; font-weight: 500; }
+  .pill-tag.green { background: rgba(105,219,124,0.12); color: var(--green); }
+  .pill-tag.red { background: rgba(255,107,107,0.12); color: var(--red); }
+  .pill-tag.lav { background: rgba(167,139,250,0.12); color: var(--lav2); }
+  .pos-receipt { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius2); padding: 16px; margin-bottom: 16px; }
+  .receipt-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: var(--text2); font-family: 'Geist Mono', monospace; }
+  .receipt-row.total { border-top: 1px dashed var(--border2); margin-top: 6px; padding-top: 10px; font-size: 16px; color: var(--text); font-weight: 700; }
+  .receipt-row.total .val { color: var(--mint); }
+
+  /* COLOR WHEEL STYLING */
+  .color-wheel-wrapper { display: flex; flex-direction: column; align-items: center; gap: 14px; background: var(--bg3); padding: 16px; border-radius: var(--radius2); border: 1px solid var(--border2); position: relative; }
+  .color-wheel-container { position: relative; width: 160px; height: 160px; display: flex; justify-content: center; align-items: center; }
+  #color-wheel-canvas { border-radius: 50%; cursor: crosshair; display: block; width: 160px; height: 160px; }
+  .color-wheel-pointer { position: absolute; width: 16px; height: 16px; border: 2px solid #ffffff; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 4px rgba(0,0,0,0.6); top: 50%; left: 50%; }
+  .color-wheel-slider-container { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+  .color-wheel-slider-container label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+  .color-wheel-slider { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 4px; outline: none; background: linear-gradient(to right, #000, #fff); border: 1px solid var(--border2); cursor: pointer; }
+  .color-wheel-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #ffffff; border: 1px solid var(--bg); cursor: pointer; box-shadow: var(--shadow2); }
+  .color-wheel-preview { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; margin-top: 4px; }
+  .color-wheel-preview-indicator { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border2); display: inline-block; }
+  .color-wheel-preview-text { font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--text2); text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ═══════════════ HOME VIEW ═══════════════ -->
+  <div class="view active" id="view-home">
+    <div class="topbar">
+      <div class="topbar-logo">
+        <div class="logo-icon">🍬</div>
+        <div class="logo-label">
+          <span class="logo-name">SweetLedger</span>
+          <span class="logo-sub" id="home-shop-name">My Candy Shop <span style="font-size:11px;color:var(--text3)">▾</span></span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="icon-btn" style="position:relative" onclick="showNotifLog()">🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span></div>
+        <div class="icon-btn" onclick="switchView('settings')">⚙️</div>
+      </div>
+    </div>
+
+    <div class="scroll-area">
+      <!-- HERO -->
+      <div class="hero">
+        <div class="hero-label">Today's Revenue</div>
+        <div class="hero-amount"><span class="currency">₱</span><span id="home-revenue">0.00</span></div>
+        <div class="hero-change">
+          <span class="pos" id="home-profit-label">+₱0.00 profit</span>
+          <span class="pill" id="home-margin-label">0%</span>
+        </div>
+        <div class="hero-date" id="home-date"></div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-actions">
+        <div class="qa-btn" onclick="openSaleModal()">
+          <div class="qa-icon pink">🛒</div>
+          <span class="qa-label">Sell</span>
+        </div>
+        <div class="qa-btn" onclick="openStockInModal()">
+          <div class="qa-icon mint">📦</div>
+          <span class="qa-label">Stock In</span>
+        </div>
+        <div class="qa-btn" onclick="switchView('log')">
+          <div class="qa-icon lav">📋</div>
+          <span class="qa-label">Log</span>
+        </div>
+        <div class="qa-btn" onclick="switchView('calendar')">
+          <div class="qa-icon peach">📅</div>
+          <span class="qa-label">PnL Cal</span>
+        </div>
+      </div>
+
+      <!-- STATS ROW -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Boxes Sold</div>
+          <div class="stat-val green" id="home-boxes-sold">0</div>
+          <div class="stat-sub">today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pieces Sold</div>
+          <div class="stat-val lav" id="home-pieces-sold">0</div>
+          <div class="stat-sub">today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Stock</div>
+          <div class="stat-val peach" id="home-total-stock">0</div>
+          <div class="stat-sub">pieces left</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Unsold Today</div>
+          <div class="stat-val red" id="home-unsold">0</div>
+          <div class="stat-sub">pieces</div>
+        </div>
+      </div>
+
+      <!-- FLAVORS -->
+      <div class="sec-header">
+        <span class="sec-title">Flavors</span>
+        <span class="sec-action" onclick="openAddFlavorModal()">+ Add</span>
+      </div>
+      <div class="flavor-list" id="home-flavor-list">
+        <div class="empty-state"><div class="empty-icon">🍭</div><div class="empty-text">No flavors yet.<br>Add your first candy flavor!</div></div>
+      </div>
+
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ POS VIEW ═══════════════ -->
+  <div class="view" id="view-pos">
+    <div class="pos-header">
+      <div class="pos-title">New Sale</div>
+      <div class="pos-subtitle">Record a candy sale</div>
+    </div>
+    <div class="scroll-area">
+      <!-- Sale type tabs -->
+      <div class="sale-type-toggle">
+        <div class="sale-toggle-btn active box" id="sale-type-box" onclick="setSaleType('box')">📦 By Box</div>
+        <div class="sale-toggle-btn piece" id="sale-type-piece" onclick="setSaleType('piece')">🍬 By Piece</div>
+      </div>
+
+      <!-- Flavor selection -->
+      <div class="sec-header" style="padding-top:0">
+        <span class="sec-title">Select Flavor</span>
+      </div>
+      <div class="flavor-select-grid" id="pos-flavor-grid">
+        <div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🍭</div><div class="empty-text">Add flavors first!</div></div>
+      </div>
+
+      <div class="sec-header">
+        <span class="sec-title">Quantity</span>
+        <span style="font-size:12px;color:var(--text3);font-family:'Geist Mono',monospace" id="pos-unit-label">boxes</span>
+      </div>
+
+      <div style="padding:0 16px">
+        <div class="np-display" id="np-display"><span class="np-placeholder">0</span></div>
+        <div id="pos-price-preview" style="font-family:'Geist Mono',monospace;font-size:13px;color:var(--text2);text-align:right;padding:4px 4px 10px">Select a flavor & qty</div>
+        <div class="numpad" id="pos-numpad">
+          <div class="np-btn" onclick="npInput('1')">1</div>
+          <div class="np-btn" onclick="npInput('2')">2</div>
+          <div class="np-btn" onclick="npInput('3')">3</div>
+          <div class="np-btn" onclick="npInput('4')">4</div>
+          <div class="np-btn" onclick="npInput('5')">5</div>
+          <div class="np-btn" onclick="npInput('6')">6</div>
+          <div class="np-btn" onclick="npInput('7')">7</div>
+          <div class="np-btn" onclick="npInput('8')">8</div>
+          <div class="np-btn" onclick="npInput('9')">9</div>
+          <div class="np-btn action" onclick="npClear()">C</div>
+          <div class="np-btn" onclick="npInput('0')">0</div>
+          <div class="np-btn action" onclick="npBackspace()">⌫</div>
+        </div>
+        <div style="height:14px"></div>
+        <button class="btn btn-primary" onclick="confirmSale()">Confirm Sale ✓</button>
+        <div style="height:8px"></div>
+        <button class="btn btn-secondary" onclick="switchView('home')">Cancel</button>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ INVENTORY VIEW ═══════════════ -->
+  <div class="view" id="view-inventory">
+    <div class="topbar" style="padding-bottom:0">
+      <div style="font-size:22px;font-weight:800">Inventory</div>
+      <div class="icon-btn" onclick="openAddFlavorModal()">➕</div>
+    </div>
+    <div class="scroll-area" style="padding-top:16px">
+      <div id="inv-list">
+        <div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">No flavors yet.</div></div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ LOG VIEW ═══════════════ -->
+  <div class="view" id="view-log">
+    <div class="topbar" style="padding-bottom:0">
+      <div style="font-size:22px;font-weight:800">Activity Log</div>
+      <div class="icon-btn" onclick="clearLogConfirm()" title="Clear Log">🗑️</div>
+    </div>
+    <div class="scroll-area" style="padding-top:16px">
+      <div id="log-list">
+        <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No activity yet.</div></div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ CALENDAR VIEW ═══════════════ -->
+  <div class="view" id="view-calendar">
+    <div class="cal-header">
+      <div>
+        <div style="font-size:22px;font-weight:800">PnL Calendar</div>
+        <div class="cal-year" id="cal-year-label"></div>
+      </div>
+      <div class="cal-month-nav">
+        <div class="cal-nav-btn" onclick="calChangeMonth(-1)">‹</div>
+        <div class="cal-month-name" id="cal-month-label"></div>
+        <div class="cal-nav-btn" onclick="calChangeMonth(1)">›</div>
+      </div>
+    </div>
+    <div class="scroll-area" style="padding-top:0">
+      <div class="cal-grid-header">
+        <div class="cal-day-name">S</div><div class="cal-day-name">M</div>
+        <div class="cal-day-name">T</div><div class="cal-day-name">W</div>
+        <div class="cal-day-name">T</div><div class="cal-day-name">F</div>
+        <div class="cal-day-name">S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="cal-day-detail"></div>
+
+      <!-- Monthly summary -->
+      <div style="margin:12px 16px 0">
+        <div class="sec-header" style="padding:0 0 10px">
+          <span class="sec-title">Monthly Summary</span>
+        </div>
+        <div class="stats-row" style="padding:0 0 20px">
+          <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-val lav" id="cal-month-rev">₱0</div></div>
+          <div class="stat-card"><div class="stat-label">Profit</div><div class="stat-val green" id="cal-month-profit">₱0</div></div>
+          <div class="stat-card"><div class="stat-label">Boxes Sold</div><div class="stat-val peach" id="cal-month-boxes">0</div></div>
+          <div class="stat-card"><div class="stat-label">Pieces Sold</div><div class="stat-val pink" id="cal-month-pieces">0</div></div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SETTINGS VIEW ═══════════════ -->
+  <div class="view" id="view-settings">
+    <div class="topbar" style="padding-bottom:0">
+      <div style="font-size:22px;font-weight:800">Settings</div>
+    </div>
+    <div class="scroll-area" style="padding-top:8px">
+      <div class="settings-section">
+        <div class="settings-section-title">Shop Info</div>
+        <div class="settings-row" onclick="openShopNameModal()">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Shop Name</div>
+            <div class="settings-row-sub" id="setting-shop-name">My Candy Shop</div>
+          </div>
+          <div class="settings-row-right">✏️</div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Default Pricing</div>
+        <div class="settings-row" onclick="openSettingEdit('baseCost','Base Cost per Box (₱)','number')">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Base Cost / Box</div>
+            <div class="settings-row-sub">Your purchase price per 30-piece box</div>
+          </div>
+          <div class="settings-row-right"><span class="settings-val" id="setting-base-cost">₱100</span> ›</div>
+        </div>
+        <div class="settings-row" onclick="openSettingEdit('sellPrice','Sell Price per Box (₱)','number')">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Sell Price / Box</div>
+            <div class="settings-row-sub">Total revenue target per 30-piece box</div>
+          </div>
+          <div class="settings-row-right"><span class="settings-val" id="setting-sell-price">₱300</span> ›</div>
+        </div>
+        <div class="settings-row" onclick="openSettingEdit('piecesPerBox','Pieces per Box','number')">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Pieces per Box</div>
+            <div class="settings-row-sub">Default box size</div>
+          </div>
+          <div class="settings-row-right"><span class="settings-val" id="setting-pieces-per-box">30</span> ›</div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Notifications</div>
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Push Notifications</div>
+            <div class="settings-row-sub">Log sales & stock events</div>
+          </div>
+          <div class="toggle" id="notif-toggle" onclick="toggleNotifications()"></div>
+        </div>
+        <div class="settings-row" onclick="requestNotifPermission()">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Request Permission</div>
+            <div class="settings-row-sub" id="notif-status">Tap to request notification access</div>
+          </div>
+          <div class="settings-row-right">🔔</div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Data</div>
+        <div class="settings-row" onclick="exportData()">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Export Data (JSON)</div>
+            <div class="settings-row-sub">Download all your shop data</div>
+          </div>
+          <div class="settings-row-right">📤</div>
+        </div>
+        <div class="settings-row" onclick="importDataPrompt()">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Import Data (JSON)</div>
+            <div class="settings-row-sub">Restore from backup</div>
+          </div>
+          <div class="settings-row-right">📥</div>
+        </div>
+        <div class="settings-row" onclick="resetDailyConfirm()">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Reset Today's Sales</div>
+            <div class="settings-row-sub">Clears today's POS data only</div>
+          </div>
+          <div class="settings-row-right" style="color:var(--red)">🗑️</div>
+        </div>
+      </div>
+      <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importData(event)">
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="switchView('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" id="nav-pos" onclick="switchView('pos')">
+      <span class="nav-icon">🛒</span>
+      <span class="nav-label">Sell</span>
+    </div>
+    <div class="nav-item" id="nav-inventory" onclick="switchView('inventory')">
+      <span class="nav-icon">📦</span>
+      <span class="nav-label">Stock</span>
+    </div>
+    <div class="nav-item" id="nav-log" onclick="switchView('log')">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Log</span>
+    </div>
+    <div class="nav-item" id="nav-calendar" onclick="switchView('calendar')">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">PnL</span>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+</div>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- ADD/EDIT FLAVOR MODAL -->
+<div class="modal-overlay" id="modal-flavor">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-flavor-title">Add Flavor</div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Flavor Name</label>
+        <input type="text" id="flavor-name-input" placeholder="e.g. Strawberry, Grape, Mango...">
+      </div>
+      <div class="field">
+        <label>Emoji Icon</label>
+        <input type="text" id="flavor-emoji-input" placeholder="🍓" maxlength="4">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Cost / Box (₱)</label>
+          <input type="number" id="flavor-cost-input" placeholder="100">
+        </div>
+        <div class="field">
+          <label>Sell Price / Box (₱)</label>
+          <input type="number" id="flavor-sell-input" placeholder="300">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Pieces / Box</label>
+          <input type="number" id="flavor-pieces-input" placeholder="30">
+        </div>
+        <div class="field">
+          <label>Initial Stock (pcs)</label>
+          <input type="number" id="flavor-stock-input" placeholder="0">
+        </div>
+      </div>
+      <!-- Changed color dropdown input into an interactive Color Wheel Picker matching application tags -->
+      <div class="field">
+        <label>Color Tag Picker</label>
+        <div class="color-wheel-wrapper">
+          <div class="color-wheel-container">
+            <canvas id="color-wheel-canvas" width="160" height="160"></canvas>
+            <div class="color-wheel-pointer" id="color-wheel-pointer"></div>
+          </div>
+          <div class="color-wheel-slider-container">
+            <label>Brightness</label>
+            <input type="range" class="color-wheel-slider" id="color-wheel-brightness" min="0" max="100" value="100">
+          </div>
+          <div class="color-wheel-preview">
+            <span class="color-wheel-preview-indicator" id="color-wheel-indicator"></span>
+            <span class="color-wheel-preview-text" id="color-wheel-text">pink</span>
+          </div>
+        </div>
+        <input type="hidden" id="flavor-color-input" value="pink">
+      </div>
+      <div style="height:8px"></div>
+      <button class="btn btn-primary" onclick="saveFlavor()">Save Flavor</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-flavor')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- STOCK IN MODAL -->
+<div class="modal-overlay" id="modal-stock-in">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Stock In</div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Flavor</label>
+        <select id="stock-in-flavor"></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Boxes Added</label>
+          <input type="number" id="stock-in-boxes" placeholder="0" oninput="calcStockIn()">
+        </div>
+        <div class="field">
+          <label>Extra Pieces</label>
+          <input type="number" id="stock-in-extra" placeholder="0" oninput="calcStockIn()">
+        </div>
+      </div>
+      <div class="field">
+        <label>Cost Paid (₱) — optional override</label>
+        <input type="number" id="stock-in-cost" placeholder="Auto-calculated">
+      </div>
+      <div id="stock-in-summary" style="font-family:'Geist Mono',monospace;font-size:13px;color:var(--text2);padding:8px 0 14px"></div>
+      <button class="btn btn-pink" onclick="confirmStockIn()">Confirm Stock In 📦</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-stock-in')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTING EDIT MODAL -->
+<div class="modal-overlay" id="modal-setting-edit">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-setting-title">Edit Setting</div>
+    <div class="modal-body">
+      <div class="field">
+        <label id="modal-setting-label">Value</label>
+        <input id="modal-setting-input" type="number">
+      </div>
+      <button class="btn btn-primary" onclick="saveSettingEdit()">Save</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-setting-edit')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHOP NAME MODAL -->
+<div class="modal-overlay" id="modal-shop-name">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Shop Name</div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="shop-name-input" placeholder="My Candy Shop">
+      </div>
+      <button class="btn btn-primary" onclick="saveShopName()">Save</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-shop-name')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-confirm-title">Confirm</div>
+    <div class="modal-body">
+      <p id="modal-confirm-text" style="color:var(--text2);font-size:14px;margin-bottom:20px;line-height:1.6"></p>
+      <button class="btn btn-danger" id="modal-confirm-btn" onclick="">Confirm</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-confirm')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF LOG MODAL -->
+<div class="modal-overlay" id="modal-notif-log">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Notifications</div>
+    <div class="modal-body" id="notif-log-body" style="padding-top:0">
+      <div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">No notifications yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA LAYER — localStorage
+// ═══════════════════════════════════════════
+const DB_KEY = 'sweetledger_v2';
+let data = null;
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) { data = JSON.parse(raw); migrateData(); return; }
+  } catch(e) {}
+  data = defaultData();
+  saveData();
+}
+
+function defaultData() {
+  return {
+    settings: { shopName: 'My Candy Shop', baseCost: 100, sellPrice: 300, piecesPerBox: 30, notifEnabled: false },
+    flavors: [],
+    sales: [],       // { id, flavorId, type:'box'|'piece', qty, totalRevenue, profit, ts }
+    stockIns: [],    // { id, flavorId, boxes, pieces, costPaid, ts }
+    adjustments: [], // { id, flavorId, delta, reason, ts }
+    notifLog: []     // { msg, ts }
+  };
+}
+
+function migrateData() {
+  if (!data.notifLog) data.notifLog = [];
+  if (!data.adjustments) data.adjustments = [];
+  if (!data.settings.piecesPerBox) data.settings.piecesPerBox = 30;
+}
+
+function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(data)); }
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function fmtPHP(n) { return '₱' + Number(n).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtPHPShort(n) { if(n>=1000) return '₱'+(n/1000).toFixed(1)+'k'; return '₱'+Math.round(n); }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+const COLOR_MAP = { pink:'#ffb3c6', mint:'#b5ead7', lav:'#c9b8ff', peach:'#ffd6a5', yellow:'#fff3b0' };
+const BG_MAP   = { pink:'rgba(255,179,198,0.15)', mint:'rgba(181,234,215,0.15)', lav:'rgba(201,184,255,0.15)', peach:'rgba(255,214,165,0.15)', yellow:'rgba(255,243,176,0.15)' };
+
+function getFlavorById(id) { return data.flavors.find(f=>f.id===id); }
+
+function getTodaySales() { const td=todayKey(); return data.sales.filter(s=>s.ts.slice(0,10)===td); }
+
+function getFlavorStock(flavorId) {
+  const inPieces = data.stockIns.filter(s=>s.flavorId===flavorId).reduce((a,s)=>a+s.pieces,0)
+    + (getFlavorById(flavorId)?.initialStock||0);
+  const soldPieces = data.sales.filter(s=>s.flavorId===flavorId).reduce((a,s)=>{
+    const f=getFlavorById(flavorId); if(!f) return a;
+    return a+(s.type==='box'?s.qty*(f.piecesPerBox||data.settings.piecesPerBox):s.qty);
+  },0);
+  const adj = data.adjustments.filter(a=>a.flavorId===flavorId).reduce((a,d)=>a+d.delta,0);
+  return Math.max(0, inPieces - soldPieces + adj);
+}
+
+function getDateData(dateKey) {
+  const sales = data.sales.filter(s=>s.ts.slice(0,10)===dateKey);
+  const revenue = sales.reduce((a,s)=>a+s.totalRevenue,0);
+  const profit  = sales.reduce((a,s)=>a+s.profit,0);
+  const boxes   = sales.filter(s=>s.type==='box').reduce((a,s)=>a+s.qty,0);
+  const pieces  = sales.filter(s=>s.type==='piece').reduce((a,s)=>a+s.qty,0);
+  
+  const flavorCounts = {};
+  sales.forEach(s => {
+    flavorCounts[s.flavorId] = (flavorCounts[s.flavorId] || 0) + s.totalRevenue;
+  });
+  let topFlavorName = null;
+  let maxRevenue = -1;
+  Object.keys(flavorCounts).forEach(fid => {
+    if (flavorCounts[fid] > maxRevenue) {
+      maxRevenue = flavorCounts[fid];
+      const f = getFlavorById(fid);
+      if (f) topFlavorName = `${f.emoji || '🍬'} ${f.name}`;
+    }
+  });
+
+  return { revenue, profit, boxes, pieces, count:sales.length, topFlavor: topFlavorName };
+}
+
+// ═══════════════════════════════════════════
+// VIEW SWITCHING
+// ═══════════════════════════════════════════
+let currentView = 'home';
+
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const ni = document.getElementById('nav-'+name);
+  if(ni) ni.classList.add('active');
+  currentView = name;
+  if(name==='home') renderHome();
+  if(name==='pos') renderPos();
+  if(name==='inventory') renderInventory();
+  if(name==='log') renderLog();
+  if(name==='calendar') renderCalendar();
+  if(name==='settings') renderSettings();
+}
+
+// ═══════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════
+function renderHome() {
+  const td = todayKey();
+  const todaySales = getTodaySales();
+  const revenue = todaySales.reduce((a,s)=>a+s.totalRevenue,0);
+  const profit  = todaySales.reduce((a,s)=>a+s.profit,0);
+  const margin  = revenue>0 ? Math.round(profit/revenue*100) : 0;
+  const boxesSold = todaySales.filter(s=>s.type==='box').reduce((a,s)=>a+s.qty,0);
+  const piecesSold= todaySales.filter(s=>s.type==='piece').reduce((a,s)=>a+s.qty,0);
+  const totalStock = data.flavors.reduce((a,f)=>a+getFlavorStock(f.id),0);
+
+  document.getElementById('home-revenue').textContent = revenue.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const profitEl = document.getElementById('home-profit-label');
+  profitEl.textContent = (profit>=0?'+':'')+fmtPHP(profit)+' profit';
+  profitEl.className = profit>=0 ? 'pos' : 'neg';
+  const marginEl = document.getElementById('home-margin-label');
+  marginEl.textContent = margin+'%';
+  marginEl.className = 'pill' + (profit<0?' neg':'');
+  document.getElementById('home-date').textContent = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('home-boxes-sold').textContent = boxesSold;
+  document.getElementById('home-pieces-sold').textContent = piecesSold;
+  document.getElementById('home-total-stock').textContent = totalStock;
+  document.getElementById('home-unsold').textContent = totalStock;
+  document.getElementById('home-shop-name').innerHTML = (data.settings.shopName||'My Candy Shop')+' <span style="font-size:11px;color:var(--text3)">▾</span>';
+
+  // Flavor list
+  const list = document.getElementById('home-flavor-list');
+  if(data.flavors.length===0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🍭</div><div class="empty-text">No flavors yet.<br>Add your first candy flavor!</div></div>';
+    return;
+  }
+  list.innerHTML = data.flavors.map(f=>{
+    const stock = getFlavorStock(f.id);
+    const tdSales = todaySales.filter(s=>s.flavorId===f.id);
+    const tdRev = tdSales.reduce((a,s)=>a+s.totalRevenue,0);
+    const tdProfit = tdSales.reduce((a,s)=>a+s.profit,0);
+    return `<div class="flavor-card" onclick="openFlavorDetail('${f.id}')">
+      <div class="flavor-avatar" style="background:${BG_MAP[f.color]||BG_MAP.pink}">${f.emoji||'🍬'}</div>
+      <div class="flavor-info">
+        <div class="flavor-name">${f.name}</div>
+        <div class="flavor-sub">${stock} pcs left · ${fmtPHP(f.sellPrice||data.settings.sellPrice)}/box</div>
+      </div>
+      <div class="flavor-right">
+        <div class="flavor-val">${fmtPHPShort(tdRev)}</div>
+        <div class="flavor-change ${tdProfit>=0?'pos':'neg'}">${tdProfit>=0?'+':''}${fmtPHPShort(tdProfit)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// POS
+// ═══════════════════════════════════════════
+let posState = { saleType:'box', flavorId:null, qty:'' };
+
+function renderPos() {
+  posState.qty = '';
+  posState.flavorId = null;
+  updateNpDisplay();
+  renderPosFlavorGrid();
+}
+
+function setSaleType(t) {
+  posState.saleType = t;
+  posState.qty = '';
+  document.getElementById('sale-type-box').className = 'sale-toggle-btn'+(t==='box'?' active box':'');
+  document.getElementById('sale-type-piece').className = 'sale-toggle-btn'+(t==='piece'?' active piece':'');
+  document.getElementById('pos-unit-label').textContent = t==='box'?'boxes':'pieces';
+  updateNpDisplay();
+  renderPosFlavorGrid();
+}
+
+function renderPosFlavorGrid() {
+  const grid = document.getElementById('pos-flavor-grid');
+  if(data.flavors.length===0) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🍭</div><div class="empty-text">Add flavors first!</div></div>';
+    return;
+  }
+  grid.innerHTML = data.flavors.map(f=>{
+    const stock = getFlavorStock(f.id);
+    const ppb = f.piecesPerBox||data.settings.piecesPerBox;
+    const pricePerPiece = (f.sellPrice||data.settings.sellPrice)/ppb;
+    const displayPrice = posState.saleType==='box' ? fmtPHP(f.sellPrice||data.settings.sellPrice)+'/box' : fmtPHP(pricePerPiece)+'/pc';
+    return `<div class="fs-card${posState.flavorId===f.id?' selected':''}" onclick="selectPosFlavor('${f.id}')">
+      <div class="fs-emoji">${f.emoji||'🍬'}</div>
+      <div class="fs-name">${f.name}</div>
+      <div class="fs-stock">${stock} pcs left</div>
+      <div class="fs-price">${displayPrice}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectPosFlavor(id) {
+  posState.flavorId = id;
+  renderPosFlavorGrid();
+  updateNpDisplay();
+}
+
+function npInput(v) {
+  if(posState.qty.length>=6) return;
+  posState.qty = (posState.qty+v).replace(/^0+/,'') || '0';
+  updateNpDisplay();
+}
+function npClear() { posState.qty=''; updateNpDisplay(); }
+function npBackspace() { posState.qty=posState.qty.slice(0,-1); updateNpDisplay(); }
+
+function updateNpDisplay() {
+  const disp = document.getElementById('np-display');
+  const prev = document.getElementById('pos-price-preview');
+  const qty = parseInt(posState.qty)||0;
+  disp.innerHTML = qty>0 ? `<span>${qty}</span>` : `<span class="np-placeholder">${posState.saleType==='box'?'# boxes':'# pieces'}</span>`;
+
+  if(!posState.flavorId || qty===0) { prev.textContent='Select a flavor & qty'; return; }
+  const f = getFlavorById(posState.flavorId);
+  const ppb = f.piecesPerBox||data.settings.piecesPerBox;
+  const costPerPiece = (f.baseCost||data.settings.baseCost)/ppb;
+  const sellPerPiece = (f.sellPrice||data.settings.sellPrice)/ppb;
+  let revenue, cost;
+  if(posState.saleType==='box') {
+    revenue = qty*(f.sellPrice||data.settings.sellPrice);
+    cost    = qty*(f.baseCost||data.settings.baseCost);
+  } else {
+    revenue = qty*sellPerPiece;
+    cost    = qty*costPerPiece;
+  }
+  const profit = revenue-cost;
+  prev.innerHTML = `${fmtPHP(revenue)} revenue &nbsp;·&nbsp; <span style="color:${profit>=0?'var(--green)':'var(--red)'}">${profit>=0?'+':''}${fmtPHP(profit)}</span> profit`;
+}
+
+function confirmSale() {
+  const qty = parseInt(posState.qty)||0;
+  if(!posState.flavorId) { showToast('⚠️ Select a flavor first'); return; }
+  if(qty<=0) { showToast('⚠️ Enter quantity'); return; }
+  const f = getFlavorById(posState.flavorId);
+  const stock = getFlavorStock(posState.flavorId);
+  const ppb = f.piecesPerBox||data.settings.piecesPerBox;
+  const piecesNeeded = posState.saleType==='box' ? qty*ppb : qty;
+  if(piecesNeeded>stock) { showToast(`❌ Not enough stock! (${stock} pcs left)`); return; }
+
+  const costPerPiece = (f.baseCost||data.settings.baseCost)/ppb;
+  const sellPerPiece = (f.sellPrice||data.settings.sellPrice)/ppb;
+  const revenue = posState.saleType==='box' ? qty*(f.sellPrice||data.settings.sellPrice) : qty*sellPerPiece;
+  const cost    = posState.saleType==='box' ? qty*(f.baseCost||data.settings.baseCost) : qty*costPerPiece;
+  const profit  = revenue-cost;
+
+  const sale = { id:uid(), flavorId:f.id, type:posState.saleType, qty, totalRevenue:revenue, profit, cost, ts:new Date().toISOString() };
+  data.sales.push(sale);
+  saveData();
+
+  const msg = `Sold ${qty} ${posState.saleType}(s) of ${f.name} — ${fmtPHP(revenue)}`;
+  addNotif(msg);
+  sendPushNotif('SweetLedger Sale 🍬', msg);
+  showToast(`✅ Sale recorded! ${fmtPHP(revenue)}`);
+  posState.qty=''; posState.flavorId=null;
+  renderPos();
+  renderHome();
+}
+
+// ═══════════════════════════════════════════
+// INVENTORY
+// ═══════════════════════════════════════════
+function renderInventory() {
+  const list = document.getElementById('inv-list');
+  if(data.flavors.length===0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">No flavors yet.</div></div>';
+    return;
+  }
+  list.innerHTML = data.flavors.map(f=>{
+    const stock = getFlavorStock(f.id);
+    const ppb = f.piecesPerBox||data.settings.piecesPerBox;
+    const boxes = Math.floor(stock/ppb);
+    const remainder = stock%ppb;
+    return `<div class="inv-card">
+      <div class="inv-card-top">
+        <div class="inv-card-name">
+          <div class="inv-card-emoji">${f.emoji||'🍬'}</div>
+          <div class="inv-card-label">${f.name}<small>₱${f.baseCost||data.settings.baseCost} cost · ₱${f.sellPrice||data.settings.sellPrice} sell</small></div>
+        </div>
+        <div class="inv-actions">
+          <div class="inv-act-btn edit" onclick="openEditFlavor('${f.id}')">✏️</div>
+          <div class="inv-act-btn del" onclick="deleteFlavor('${f.id}')">🗑️</div>
+        </div>
+      </div>
+      <div class="inv-bar-row">
+        <div class="inv-bar"><div class="inv-bar-label">Total</div><div class="inv-bar-val lav">${stock} pcs</div></div>
+        <div class="inv-bar"><div class="inv-bar-label">Boxes</div><div class="inv-bar-val green">${boxes} box${boxes!==1?'es':''}</div></div>
+        <div class="inv-bar"><div class="inv-bar-label">Loose</div><div class="inv-bar-val ${remainder>0?'peach':''}">${remainder} pcs</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════
+function renderLog() {
+  const list = document.getElementById('log-list');
+  const events = [
+    ...data.sales.map(s=>({ ts:s.ts, type:'sale', data:s })),
+    ...data.stockIns.map(s=>({ ts:s.ts, type:'stock', data:s })),
+    ...data.adjustments.map(a=>({ ts:a.ts, type:'adjust', data:a }))
+  ].sort((a,b)=>b.ts.localeCompare(a.ts));
+
+  if(events.length===0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No activity yet.</div></div>';
+    return;
+  }
+
+  let html='', lastDate='';
+  events.forEach(e=>{
+    const d = e.ts.slice(0,10);
+    if(d!==lastDate) {
+      const dateLabel = d===todayKey()?'Today':fmtDate(e.ts);
+      html += `<div class="log-date-header">${dateLabel}</div>`;
+      lastDate=d;
+    }
+    if(e.type==='sale') {
+      const f=getFlavorById(e.data.flavorId);
+      const fname=f?f.name:'Unknown';
+      const emoji=f?f.emoji:'🍬';
+      html += `<div class="log-entry">
+        <div class="log-dot sale"></div>
+        <div class="log-info"><div class="log-desc">${emoji} Sold ${e.data.qty} ${e.data.type}(s) — ${fname}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div>
+        <div class="log-amount pos">+${fmtPHP(e.data.totalRevenue)}</div>
+      </div>`;
+    } else if(e.type==='stock') {
+      const f=getFlavorById(e.data.flavorId);
+      const fname=f?f.name:'Unknown';
+      html += `<div class="log-entry">
+        <div class="log-dot stock"></div>
+        <div class="log-info"><div class="log-desc">📦 Stock In — ${fname} (+${e.data.pieces} pcs)</div><div class="log-time">${fmtTime(e.data.ts)}</div></div>
+        <div class="log-amount neutral">${fmtPHP(e.data.costPaid)}</div>
+      </div>`;
+    } else {
+      const f=getFlavorById(e.data.flavorId);
+      const fname=f?f.name:'Unknown';
+      html += `<div class="log-entry">
+        <div class="log-dot adjust"></div>
+        <div class="log-info"><div class="log-desc">⚖️ Adjustment — ${fname}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div>
+        <div class="log-amount ${e.data.delta>=0?'pos':'neg'}">${e.data.delta>=0?'+':''}${e.data.delta}</div>
+      </div>`;
+    }
+  });
+  list.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// CALENDAR VIEW MODIFICATIONS
+// ═══════════════════════════════════════════
+let calState = { year: new Date().getFullYear(), month: new Date().getMonth(), selected: null };
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalendar() {
+  const { year, month } = calState;
+  document.getElementById('cal-month-label').textContent = MONTH_NAMES[month];
+  document.getElementById('cal-year-label').textContent = year;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date();
+
+  let html = '';
+  for(let i=0;i<firstDay;i++) html += '<div class="cal-cell empty"></div>';
+  for(let d=1;d<=daysInMonth;d++) {
+    const dk = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dd = getDateData(dk);
+    const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===d;
+    const isSel = calState.selected===dk;
+    let cls = 'cal-cell';
+    if(isToday) cls+=' today';
+    if(dd.count>0) cls += dd.profit>=0?' profit':' loss';
+    if(isSel) cls+=' selected';
+    
+    let pnlLabel = '';
+    if (dd.revenue > 0) {
+      pnlLabel = `<div class="cal-day-pnl-label green">${fmtPHPShort(dd.revenue)}</div>`;
+    } else {
+      pnlLabel = `<div class="cal-day-pnl-label red">~</div>`;
+    }
+
+    html += `<div class="${cls}" onclick="calSelectDay('${dk}')">
+      <span class="cal-day-num">${d}</span>
+      ${pnlLabel}
+    </div>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+
+  let mRev=0, mProfit=0, mBoxes=0, mPieces=0;
+  for(let d=1;d<=daysInMonth;d++) {
+    const dk = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dd = getDateData(dk);
+    mRev+=dd.revenue; mProfit+=dd.profit; mBoxes+=dd.boxes; mPieces+=dd.pieces;
+  }
+  document.getElementById('cal-month-rev').textContent = fmtPHPShort(mRev);
+  document.getElementById('cal-month-profit').textContent = fmtPHPShort(mProfit);
+  document.getElementById('cal-month-profit').className = 'stat-val '+(mProfit>=0?'green':'red');
+  document.getElementById('cal-month-boxes').textContent = mBoxes;
+  document.getElementById('cal-month-pieces').textContent = mPieces;
+
+  renderCalDayDetail();
+}
+
+function calSelectDay(dk) {
+  calState.selected = calState.selected===dk ? null : dk;
+  renderCalendar();
+}
+
+function renderCalDayDetail() {
+  const det = document.getElementById('cal-day-detail');
+  if(!calState.selected) { det.innerHTML=''; return; }
+  const dd = getDateData(calState.selected);
+  const d = new Date(calState.selected+'T00:00:00');
+  
+  const flavorDisplayString = dd.topFlavor ? dd.topFlavor : '<span style="color:var(--text3)">None</span>';
+
+  det.innerHTML = `<div class="cal-day-detail">
+    <div class="cal-detail-date">${d.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Gross Revenue</span><span class="cal-detail-val lav">${fmtPHP(dd.revenue)}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Net Profit</span><span class="cal-detail-val ${dd.profit>=0?'green':'red'}">${dd.profit>=0?'+':''}${fmtPHP(dd.profit)}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Top Flavor</span><span class="cal-detail-val">${flavorDisplayString}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Boxes Sold</span><span class="cal-detail-val">${dd.boxes}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Pieces Sold</span><span class="cal-detail-val">${dd.pieces}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Transactions</span><span class="cal-detail-val">${dd.count}</span></div>
+  </div>`;
+}
+
+function calChangeMonth(dir) {
+  calState.month += dir;
+  if(calState.month>11) { calState.month=0; calState.year++; }
+  if(calState.month<0)  { calState.month=11; calState.year--; }
+  if(calState.year<2020) { calState.year=2020; calState.month=0; }
+  if(calState.year>2030) { calState.year=2030; calState.month=11; }
+  calState.selected=null;
+  renderCalendar();
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+function renderSettings() {
+  document.getElementById('setting-shop-name').textContent = data.settings.shopName||'My Candy Shop';
+  document.getElementById('setting-base-cost').textContent = '₱'+data.settings.baseCost;
+  document.getElementById('setting-sell-price').textContent = '₱'+data.settings.sellPrice;
+  document.getElementById('setting-pieces-per-box').textContent = data.settings.piecesPerBox;
+  const tog = document.getElementById('notif-toggle');
+  tog.className = 'toggle'+(data.settings.notifEnabled?' on':'');
+}
+
+let editingSettingKey = '';
+function openSettingEdit(key, label, type) {
+  editingSettingKey = key;
+  document.getElementById('modal-setting-title').textContent = label;
+  document.getElementById('modal-setting-label').textContent = label;
+  const inp = document.getElementById('modal-setting-input');
+  inp.type = type;
+  inp.value = data.settings[key];
+  openModal('modal-setting-edit');
+}
+
+function saveSettingEdit() {
+  const val = parseFloat(document.getElementById('modal-setting-input').value)||0;
+  data.settings[editingSettingKey] = val;
+  saveData();
+  renderSettings();
+  closeModal('modal-setting-edit');
+  showToast('✅ Setting saved');
+}
+
+function openShopNameModal() {
+  document.getElementById('shop-name-input').value = data.settings.shopName||'';
+  openModal('modal-shop-name');
+}
+function saveShopName() {
+  const n = document.getElementById('shop-name-input').value.trim();
+  if(!n) return;
+  data.settings.shopName=n; saveData(); renderSettings(); renderHome();
+  closeModal('modal-shop-name'); showToast('✅ Shop name updated');
+}
+
+// ═══════════════════════════════════════════
+// NOTIFICATIONS & UTILS
+// ═══════════════════════════════════════════
+function toggleNotifications() {
+  data.settings.notifEnabled = !data.settings.notifEnabled;
+  saveData(); renderSettings();
+}
+
+function requestNotifPermission() {
+  if(!('Notification' in window)) { showToast('❌ Notifications not supported'); return; }
+  Notification.requestPermission().then(p=>{
+    document.getElementById('notif-status').textContent = 'Permission: '+p;
+    showToast(p==='granted'?'🔔 Notifications enabled!':'❌ Permission '+p);
+  });
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='sweetledger_backup_'+todayKey()+'.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📤 Export ready!');
+}
+
+function importDataPrompt() { document.getElementById('import-file-input').click(); }
+function importData(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if(imported.settings && imported.flavors) {
+        data = imported; migrateData(); saveData();
+        renderHome(); renderSettings();
+        showToast('✅ Data imported!');
+      } else showToast('❌ Invalid backup file');
+    } catch { showToast('❌ Failed to parse file'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function resetDailyConfirm() {
+  showConfirm("Reset Today's Sales?","This will remove all of today's sale records. Inventory and logs will be kept.", ()=>{
+    const td=todayKey();
+    data.sales = data.sales.filter(s=>s.ts.slice(0,10)!==td);
+    saveData(); renderHome(); showToast('🗑️ Today\'s sales cleared');
+  });
+}
+
+function clearLogConfirm() {
+  showConfirm("Clear Activity Log?","All sales, stock-ins, and adjustments will be permanently deleted. Flavors and settings remain.", ()=>{
+    data.sales=[]; data.stockIns=[]; data.adjustments=[];
+    saveData(); renderLog(); renderHome(); showToast('🗑️ Log cleared');
+  });
+}
+
+// ═══════════════════════════════════════════
+// FLAVOR CRUD
+// ═══════════════════════════════════════════
+let editingFlavorId = null;
+
+function openAddFlavorModal() {
+  editingFlavorId = null;
+  document.getElementById('modal-flavor-title').textContent = 'Add Flavor';
+  document.getElementById('flavor-name-input').value='';
+  document.getElementById('flavor-emoji-input').value='🍬';
+  document.getElementById('flavor-cost-input').value=data.settings.baseCost;
+  document.getElementById('flavor-sell-input').value=data.settings.sellPrice;
+  document.getElementById('flavor-pieces-input').value=data.settings.piecesPerBox;
+  document.getElementById('flavor-stock-input').value='0';
+  
+  updateColorWheelSelection('pink');
+  openModal('modal-flavor');
+}
+
+function openEditFlavor(id) {
+  editingFlavorId = id;
+  const f = getFlavorById(id);
+  document.getElementById('modal-flavor-title').textContent = 'Edit Flavor';
+  document.getElementById('flavor-name-input').value=f.name;
+  document.getElementById('flavor-emoji-input').value=f.emoji||'🍬';
+  document.getElementById('flavor-cost-input').value=f.baseCost||data.settings.baseCost;
+  document.getElementById('flavor-sell-input').value=f.sellPrice||data.settings.sellPrice;
+  document.getElementById('flavor-pieces-input').value=f.piecesPerBox||data.settings.piecesPerBox;
+  document.getElementById('flavor-stock-input').value=f.initialStock||0;
+  
+  updateColorWheelSelection(f.color||'pink');
+  openModal('modal-flavor');
+}
+
+function saveFlavor() {
+  const name = document.getElementById('flavor-name-input').value.trim();
+  if(!name) { showToast('⚠️ Enter a flavor name'); return; }
+  const flavor = {
+    id: editingFlavorId || uid(),
+    name,
+    emoji: document.getElementById('flavor-emoji-input').value||'🍬',
+    baseCost: parseFloat(document.getElementById('flavor-cost-input').value)||data.settings.baseCost,
+    sellPrice: parseFloat(document.getElementById('flavor-sell-input').value)||data.settings.sellPrice,
+    piecesPerBox: parseInt(document.getElementById('flavor-pieces-input').value)||data.settings.piecesPerBox,
+    initialStock: parseInt(document.getElementById('flavor-stock-input').value)||0,
+    color: document.getElementById('flavor-color-input').value
+  };
+  if(editingFlavorId) {
+    const idx = data.flavors.findIndex(f=>f.id===editingFlavorId);
+    data.flavors[idx] = flavor;
+  } else {
+    data.flavors.push(flavor);
+  }
+  saveData();
+  closeModal('modal-flavor');
+  renderHome(); renderInventory();
+  showToast('✅ Flavor '+(editingFlavorId?'updated':'added')+'!');
+}
+
+function deleteFlavor(id) {
+  const f = getFlavorById(id);
+  showConfirm(`Delete "${f.name}"?`, 'This will remove the flavor. Sales history will be kept.', ()=>{
+    data.flavors = data.flavors.filter(x=>x.id!==id);
+    saveData(); renderHome(); renderInventory();
+    showToast(`🗑️ ${f.name} removed`);
+  });
+}
+
+function openFlavorDetail(id) {
+  openEditFlavor(id);
+}
+
+// ═══════════════════════════════════════════
+// STOCK IN
+// ═══════════════════════════════════════════
+function openStockInModal() {
+  const sel = document.getElementById('stock-in-flavor');
+  sel.innerHTML = data.flavors.length===0 ? '<option value="">No flavors — add one first</option>'
+    : data.flavors.map(f=>`<option value="${f.id}">${f.emoji||'🍬'} ${f.name}</option>`).join('');
+  document.getElementById('stock-in-boxes').value='';
+  document.getElementById('stock-in-extra').value='';
+  document.getElementById('stock-in-cost').value='';
+  document.getElementById('stock-in-summary').textContent='';
+  openModal('modal-stock-in');
+}
+
+function calcStockIn() {
+  const flId = document.getElementById('stock-in-flavor').value;
+  if(!flId) return;
+  const f = getFlavorById(flId);
+  if(!f) return;
+  const boxes = parseInt(document.getElementById('stock-in-boxes').value)||0;
+  const extra = parseInt(document.getElementById('stock-in-extra').value)||0;
+  const ppb = f.piecesPerBox||data.settings.piecesPerBox;
+  const totalPcs = boxes*ppb+extra;
+  const autoCost = boxes*(f.baseCost||data.settings.baseCost);
+  document.getElementById('stock-in-summary').textContent = `+${totalPcs} pieces · Auto-cost: ${fmtPHP(autoCost)}`;
+}
+
+function confirmStockIn() {
+  const flId = document.getElementById('stock-in-flavor').value;
+  if(!flId) { showToast('⚠️ Select a flavor'); return; }
+  const f = getFlavorById(flId);
+  const boxes = parseInt(document.getElementById('stock-in-boxes').value)||0;
+  const extra = parseInt(document.getElementById('stock-in-extra').value)||0;
+  const ppb = f.piecesPerBox||data.settings.piecesPerBox;
+  const totalPcs = boxes*ppb+extra;
+  if(totalPcs<=0) { showToast('⚠️ Enter quantity'); return; }
+  const costInput = parseFloat(document.getElementById('stock-in-cost').value);
+  const costPaid = isNaN(costInput) ? boxes*(f.baseCost||data.settings.baseCost) : costInput;
+
+  data.stockIns.push({ id:uid(), flavorId:flId, boxes, extra, pieces:totalPcs, costPaid, ts:new Date().toISOString() });
+  saveData();
+  closeModal('modal-stock-in');
+  const msg = `Stocked in ${totalPcs} pcs of ${f.name} (${boxes} boxes)`;
+  addNotif(msg);
+  sendPushNotif('SweetLedger Stock 📦', msg);
+  renderHome(); renderInventory();
+  showToast(`📦 Stock added! +${totalPcs} pcs`);
+}
+
+// ═══════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════
+function addNotif(msg) {
+  data.notifLog.unshift({ msg, ts:new Date().toISOString() });
+  if(data.notifLog.length>100) data.notifLog.pop();
+  saveData();
+  updateNotifBadge();
+}
+
+function updateNotifBadge() {
+  const badge = document.getElementById('notif-badge');
+  const n = data.notifLog.length;
+  if(n>0) { badge.style.display='flex'; badge.textContent=n>9?'9+':n; }
+  else badge.style.display='none';
+}
+
+function showNotifLog() {
+  const body = document.getElementById('notif-log-body');
+  if(data.notifLog.length===0) {
+    body.innerHTML='<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">No notifications yet.</div></div>';
+  } else {
+    body.innerHTML = data.notifLog.map(n=>`
+      <div class="log-entry" style="margin:0 0 6px;background:var(--bg3)">
+        <div class="log-dot" style="background:var(--lav)"></div>
+        <div class="log-info"><div class="log-desc">${n.msg}</div><div class="log-time">${fmtDate(n.ts)} ${fmtTime(n.ts)}</div></div>
+      </div>`).join('');
+  }
+  openModal('modal-notif-log');
+}
+
+function sendPushNotif(title, body) {
+  if(!data.settings.notifEnabled) return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='granted') {
+    try { new Notification(title, { body, icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🍬</text></svg>' }); } catch(e){}
+  }
+}
+
+// ═══════════════════════════════════════════
+// MODALS & ACTIONS
+// ═══════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showConfirm(title, text, onConfirm) {
+  document.getElementById('modal-confirm-title').textContent = title;
+  document.getElementById('modal-confirm-text').textContent = text;
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.onclick = ()=>{ onConfirm(); closeModal('modal-confirm'); };
+  openModal('modal-confirm');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('open'); });
+});
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function openSaleModal() { switchView('pos'); }
+
+// ═══════════════════════════════════════════
+// COLOR WHEEL SYSTEM LOGIC
+// ═══════════════════════════════════════════
+const canvas = document.getElementById('color-wheel-canvas');
+const ctx = canvas.getContext('2d');
+const pointer = document.getElementById('color-wheel-pointer');
+const brightnessSlider = document.getElementById('color-wheel-brightness');
+const indicator = document.getElementById('color-wheel-indicator');
+const textLabel = document.getElementById('color-wheel-text');
+const hiddenInput = document.getElementById('flavor-color-input');
+
+const AVAILABLE_TAGS = [
+  { name: 'pink',   angleStart: -30,  angleEnd: 45,   color: '#ffb3c6' },
+  { name: 'peach',  angleStart: 45,   angleEnd: 105,  color: '#ffd6a5' },
+  { name: 'yellow', angleStart: 105,  angleEnd: 165,  color: '#fff3b0' },
+  { name: 'mint',   angleStart: 165,  angleEnd: 245,  color: '#b5ead7' },
+  { name: 'lav',    angleStart: 245,  angleEnd: 330,  color: '#c9b8ff' }
+];
+
+const TAG_COORDINATE_ANGLES = { pink: 10, peach: 75, yellow: 135, mint: 205, lav: 285 };
+
+function drawColorWheel() {
+  const radius = canvas.width / 2;
+  const cx = radius;
+  const cy = radius;
+  const brightness = parseInt(brightnessSlider.value) / 100;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist <= radius) {
+        let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        if (angle < 0) angle += 360;
+
+        let hue = angle; 
+        let sat = Math.min(1, dist / radius) * 100;
+        let lgt = (100 - (sat * 0.25)) * brightness;
+
+        ctx.fillStyle = `hsl(${hue}, ${sat}%, ${lgt}%)`;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+}
+
+function updateColorWheelSelection(tagName) {
+  const radius = canvas.width / 2;
+  const angleDeg = TAG_COORDINATE_ANGLES[tagName] || 0;
+  const angleRad = angleDeg * (Math.PI / 180);
+  
+  const rDistance = radius * 0.7; 
+  const x = radius + rDistance * Math.cos(angleRad);
+  const y = radius + rDistance * Math.sin(angleRad);
+
+  pointer.style.left = `${x}px`;
+  pointer.style.top = `${y}px`;
+  
+  hiddenInput.value = tagName;
+  textLabel.textContent = tagName;
+  indicator.style.backgroundColor = COLOR_MAP[tagName];
+}
+
+function handleWheelSelection(e) {
+  const rect = canvas.getBoundingClientRect();
+  const radius = canvas.width / 2;
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  const dx = x - radius;
+  const dy = y - radius;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist <= radius) {
+    pointer.style.left = `${x}px`;
+    pointer.style.top = `${y}px`;
+
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (angle < 0) angle += 360;
+
+    let matchedTag = AVAILABLE_TAGS.find(tag => {
+      let start = tag.angleStart < 0 ? tag.angleStart + 360 : tag.angleStart;
+      let end = tag.angleEnd < 0 ? tag.angleEnd + 360 : tag.angleEnd;
+      if (start > end) {
+        return angle >= start || angle <= end;
+      }
+      return angle >= start && angle <= end;
+    });
+
+    if (!matchedTag) matchedTag = AVAILABLE_TAGS[0];
+
+    hiddenInput.value = matchedTag.name;
+    textLabel.textContent = matchedTag.name;
+    indicator.style.backgroundColor = COLOR_MAP[matchedTag.name];
+  }
+}
+
+canvas.addEventListener('mousedown', handleWheelSelection);
+canvas.addEventListener('mousemove', (e) => { if (e.buttons === 1) handleWheelSelection(e); });
+canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 1) handleWheelSelection(e.touches[0]); });
+canvas.addEventListener('touchmove', (e) => { if (e.touches.length === 1) handleWheelSelection(e.touches[0]); });
+brightnessSlider.addEventListener('input', () => {
+  drawColorWheel();
+  updateColorWheelSelection(hiddenInput.value);
+});
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+loadData();
+renderHome();
+updateNotifBadge();
+drawColorWheel();
+
+document.getElementById('home-date').textContent = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+if('Notification' in window) {
+  document.getElementById('notif-status').textContent = 'Permission: '+Notification.permission;
+}
+</script>
+</body>
+</html>
