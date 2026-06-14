@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SweetLedger">
+<title>SweetLedger v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — Single source of truth
+═══════════════════════════════════════════ */
+:root {
+  /* Surfaces */
+  --bg:    #0d0d10;
+  --bg2:   #141418;
+  --bg3:   #1c1c22;
+  --bg4:   #242430;
+  --card:  #18181e;
+
+  /* Borders */
+  --border:  rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.11);
+
+  /* Text */
+  --text:  #eeedf4;
+  --text2: #8e8c9e;
+  --text3: #55536a;
+
+  /* Semantic accent palette */
+  --green:  #52d68a;   /* revenue / profit */
+  --green2: #34c774;
+  --red:    #f05a5a;   /* expense / loss */
+  --lav:    #b4a4ff;   /* inventory / neutral highlight */
+  --lav2:   #9b87f5;   /* pill active / primary CTA accent */
+  --peach:  #f5c07a;   /* boxes / secondary metric */
+  --pink:   #f4a8be;   /* piece sales / flavor accent 1 */
+  --mint:   #7ecfad;   /* stock in / flavor accent 2 */
+  --yellow: #f5e07a;   /* discounts / warnings */
+
+  /* Flavor color map (bg tints) */
+  --fl-pink:   rgba(244,168,190,0.14);
+  --fl-mint:   rgba(126,207,173,0.14);
+  --fl-lav:    rgba(180,164,255,0.14);
+  --fl-peach:  rgba(245,192,122,0.14);
+  --fl-yellow: rgba(245,224,122,0.14);
+
+  /* Shadows / radius */
+  --shadow:  0 8px 32px rgba(0,0,0,0.45);
+  --shadow2: 0 2px 8px rgba(0,0,0,0.3);
+  --r:  18px;
+  --r2: 12px;
+  --r3: 8px;
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden}
+
+/* ═══════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════ */
+#app{width:100%;max-width:430px;height:100dvh;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--bg)}
+
+/* VIEWS */
+.view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;
+  transition:opacity .2s cubic-bezier(.25,.46,.45,.94),transform .2s cubic-bezier(.25,.46,.45,.94);
+  transform:translateY(8px);overflow:hidden}
+.view.active{opacity:1;pointer-events:all;transform:translateY(0)}
+
+/* SCROLL AREA */
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.scroll-area::-webkit-scrollbar{display:none}
+
+/* ═══════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════ */
+.topbar{padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.view-title{font-size:22px;font-weight:800}
+.topbar-logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--pink),var(--lav));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.logo-label{display:flex;flex-direction:column}
+.logo-name{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.06em;font-family:'Geist Mono',monospace;text-transform:uppercase}
+.logo-sub{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:4px}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:background .14s,transform .1s;font-size:15px;position:relative;flex-shrink:0}
+.icon-btn:active{transform:scale(.88);background:var(--bg4)}
+
+/* ═══════════════════════════════════════════
+   HERO SECTION
+═══════════════════════════════════════════ */
+.hero{padding:8px 28px 20px;text-align:center;position:relative}
+.hero-label{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.hero-amount{font-size:50px;font-weight:700;color:var(--text);line-height:1;letter-spacing:-1.5px}
+.hero-amount .currency{font-size:20px;vertical-align:super;margin-right:2px;color:var(--text2);font-weight:600}
+.hero-change{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.hero-change .pos{color:var(--green);font-size:13px;font-family:'Geist Mono',monospace;font-weight:500}
+.hero-change .neg{color:var(--red);font-size:13px;font-family:'Geist Mono',monospace;font-weight:500}
+.hero-change .pill{background:rgba(82,214,138,.12);color:var(--green);font-size:11px;padding:3px 9px;border-radius:20px;font-family:'Geist Mono',monospace;font-weight:600}
+.hero-change .pill.neg{background:rgba(240,90,90,.12);color:var(--red)}
+.hero-date{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;margin-top:4px}
+.hero-eye{position:absolute;bottom:22px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:background .14s,transform .1s}
+.hero-eye:active{transform:scale(.88);background:var(--bg4)}
+
+/* ═══════════════════════════════════════════
+   SEGMENTED CONTROLS
+═══════════════════════════════════════════ */
+.seg-ctrl{position:relative;display:flex;align-items:center;margin:10px auto 0;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;user-select:none}
+.seg-pill{position:absolute;top:3px;left:3px;height:calc(100% - 6px);border-radius:16px;background:var(--lav2);transition:transform .26s cubic-bezier(.34,1.1,.64,1),width .26s cubic-bezier(.34,1.1,.64,1);pointer-events:none;box-shadow:0 1px 5px rgba(155,135,245,.4)}
+.seg-btn{position:relative;z-index:1;padding:5px 18px;border-radius:16px;font-size:11px;font-weight:700;font-family:'Geist Mono',monospace;letter-spacing:.04em;cursor:pointer;color:var(--text3);transition:color .2s}
+.seg-btn.active{color:#111}
+
+/* LOG TAB STRIP */
+.log-tabs{padding:0 20px 14px}
+.log-tab-ctrl{position:relative;display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:100%;user-select:none}
+.log-tab-pill{position:absolute;top:3px;left:3px;height:calc(100% - 6px);border-radius:16px;background:var(--lav2);transition:transform .24s cubic-bezier(.34,1.1,.64,1),width .24s cubic-bezier(.34,1.1,.64,1);pointer-events:none;box-shadow:0 1px 5px rgba(155,135,245,.35)}
+.log-tab-btn{position:relative;z-index:1;flex:1;padding:9px 0;border-radius:16px;font-size:11px;font-weight:700;font-family:'Geist Mono',monospace;letter-spacing:.04em;cursor:pointer;color:var(--text3);text-align:center;transition:color .2s}
+.log-tab-btn.active{color:#111}
+
+/* ═══════════════════════════════════════════
+   QUICK ACTIONS
+═══════════════════════════════════════════ */
+.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 16px 16px}
+.qa-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:background .14s,transform .1s}
+.qa-btn:active{transform:scale(.92);background:var(--bg4)}
+.qa-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.qa-icon.pink{background:var(--fl-pink)}
+.qa-icon.mint{background:var(--fl-mint)}
+.qa-icon.lav{background:var(--fl-lav)}
+.qa-icon.peach{background:var(--fl-peach)}
+.qa-icon.red{background:rgba(240,90,90,.13)}
+.qa-label{font-size:10px;color:var(--text2);font-weight:600;letter-spacing:.02em}
+
+/* ═══════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════ */
+.sec-header{padding:0 18px 8px;display:flex;align-items:center;justify-content:space-between}
+.sec-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;font-family:'Geist Mono',monospace}
+.sec-action{font-size:12px;color:var(--lav2);font-weight:600;cursor:pointer}
+
+/* ═══════════════════════════════════════════
+   FLAVOR CARDS (Home list)
+═══════════════════════════════════════════ */
+.flavor-list{padding:0 16px;display:flex;flex-direction:column;gap:6px}
+.flavor-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .14s,transform .1s}
+.flavor-card:active{background:var(--bg3);transform:scale(.99)}
+.flavor-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.flavor-info{flex:1;min-width:0}
+.flavor-name{font-size:14px;font-weight:700;color:var(--text)}
+.flavor-sub{font-size:11px;color:var(--text2);font-family:'Geist Mono',monospace;margin-top:1px}
+.flavor-right{text-align:right;flex-shrink:0}
+.flavor-val{font-size:14px;font-weight:700;color:var(--text);font-family:'Geist Mono',monospace}
+.flavor-change{font-size:11px;font-family:'Geist Mono',monospace;margin-top:1px}
+.flavor-change.pos{color:var(--green)}.flavor-change.neg{color:var(--red)}
+
+/* ═══════════════════════════════════════════
+   STAT CARDS
+═══════════════════════════════════════════ */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 16px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px}
+.stat-label{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.stat-val{font-size:21px;font-family:'Geist',sans-serif;font-weight:700;color:var(--text)}
+.stat-val.green{color:var(--green)}.stat-val.red{color:var(--red)}.stat-val.lav{color:var(--lav)}.stat-val.peach{color:var(--peach)}.stat-val.pink{color:var(--pink)}.stat-val.yellow{color:var(--yellow)}
+.stat-sub{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;margin-top:2px}
+
+/* ═══════════════════════════════════════════
+   BOTTOM NAVIGATION
+═══════════════════════════════════════════ */
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:rgba(13,13,16,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);padding:10px 0 0;display:flex;justify-content:space-around;z-index:100;flex-shrink:0;padding-bottom:max(env(safe-area-inset-bottom,0px),20px)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 18px 4px;transition:transform .1s;position:relative}
+.nav-item:active{transform:scale(.88)}
+.nav-icon{font-size:22px;opacity:.32;transition:opacity .18s,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.nav-label{font-size:9px;color:var(--text3);font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:color .18s;font-family:'Geist Mono',monospace}
+.nav-item.active .nav-icon{opacity:1;transform:scale(1.12) translateY(-1px)}
+.nav-item.active .nav-label{color:var(--lav)}
+
+/* ═══════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s ease}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-sheet{background:var(--bg2);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:0 0 env(safe-area-inset-bottom,24px);max-height:92dvh;overflow-y:auto;transform:translateY(30px);transition:transform .28s cubic-bezier(.34,1.4,.64,1)}
+.modal-overlay.open .modal-sheet{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:14px auto 22px}
+.modal-title{font-size:17px;font-weight:700;padding:0 22px 16px;border-bottom:1px solid var(--border)}
+.modal-body{padding:22px}
+
+/* ═══════════════════════════════════════════
+   FORM FIELDS
+═══════════════════════════════════════════ */
+.field{margin-bottom:18px}
+.field label{font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:7px;font-family:'Geist Mono',monospace}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r3);color:var(--text);font-family:'Geist',sans-serif;font-size:15px;padding:13px 15px;outline:none;transition:border-color .18s;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--lav2)}
+.field select option{background:var(--bg3)}
+.field textarea{resize:vertical;min-height:68px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* ═══════════════════════════════════════════
+   NUMPAD
+═══════════════════════════════════════════ */
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+.np-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);height:60px;font-size:20px;font-weight:600;color:var(--text);cursor:pointer;transition:background .1s,transform .09s;display:flex;align-items:center;justify-content:center}
+.np-btn:active{transform:scale(.91);background:var(--bg4)}
+.np-btn.action{background:rgba(180,164,255,.12);color:var(--lav);border-color:rgba(180,164,255,.2)}
+.np-btn.confirm{background:linear-gradient(135deg,var(--mint),var(--lav2));color:#111;font-size:17px;border:none}
+.np-display{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:14px;text-align:right;font-weight:700;font-size:36px;color:var(--text);min-height:68px;display:flex;align-items:center;justify-content:flex-end;margin-bottom:7px;letter-spacing:-.5px}
+.np-display .np-placeholder{color:var(--text3);font-size:19px;font-weight:400}
+
+/* ═══════════════════════════════════════════
+   POS VIEW
+═══════════════════════════════════════════ */
+.pos-header{padding:20px 20px 8px}
+.pos-title{font-size:22px;font-weight:800}
+.pos-subtitle{font-size:12px;color:var(--text2);margin-top:2px}
+.sale-type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 18px}
+.sale-toggle-btn{padding:13px;border-radius:var(--r3);text-align:center;font-weight:700;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .18s}
+.sale-toggle-btn.active.box{background:rgba(244,168,190,.18);color:var(--pink);border-color:rgba(244,168,190,.28)}
+.sale-toggle-btn.active.piece{background:rgba(126,207,173,.18);color:var(--mint);border-color:rgba(126,207,173,.28)}
+.flavor-select-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding:0 20px 18px}
+.fs-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px;cursor:pointer;transition:all .18s}
+.fs-card.selected{border-color:var(--lav2);background:rgba(155,135,245,.1)}
+.fs-card:active{transform:scale(.96)}
+.fs-emoji{font-size:22px;margin-bottom:5px}
+.fs-name{font-size:12px;font-weight:700;color:var(--text)}
+.fs-stock{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;margin-top:2px}
+.fs-price{font-size:12px;color:var(--lav);font-family:'Geist Mono',monospace;font-weight:600;margin-top:2px}
+.fs-card.low-stock{border-color:rgba(240,90,90,.28)}
+.disc-badge{display:inline-block;background:rgba(245,224,122,.14);color:var(--yellow);font-size:10px;font-family:'Geist Mono',monospace;border-radius:5px;padding:2px 6px;margin-top:2px}
+
+/* DISCOUNT SECTION */
+.disc-toggle-row{padding:0 16px 12px;display:flex;align-items:center;justify-content:space-between;background:transparent}
+.disc-toggle-label{font-size:13px;color:var(--text2);font-weight:600}
+.disc-toggle-right{display:flex;align-items:center;gap:8px}
+.disc-fields{padding:0 16px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.disc-type-btn{padding:9px;border-radius:var(--r3);text-align:center;font-weight:700;font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .18s;font-family:'Geist Mono',monospace}
+.disc-type-btn.active{background:rgba(245,224,122,.15);color:var(--yellow);border-color:rgba(245,224,122,.3)}
+.disc-preview{padding:0 16px 12px}
+.disc-preview-inner{background:rgba(245,224,122,.07);border:1px solid rgba(245,224,122,.15);border-radius:var(--r3);padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.disc-preview-label{font-size:11px;color:var(--yellow);font-family:'Geist Mono',monospace}
+.disc-preview-val{font-size:15px;font-weight:700;color:var(--yellow);font-family:'Geist Mono',monospace}
+
+/* ═══════════════════════════════════════════
+   INVENTORY
+═══════════════════════════════════════════ */
+.inv-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin:0 16px 8px}
+.inv-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.inv-card-name{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.inv-card-emoji{font-size:22px;flex-shrink:0}
+.inv-card-label{font-size:14px;font-weight:700;flex:1;min-width:0}
+.inv-card-label small{display:block;font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;font-weight:400;margin-top:1px}
+.inv-actions{display:flex;gap:5px;flex-shrink:0}
+.inv-act-btn{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .16s}
+.inv-act-btn:active{transform:scale(.86)}
+.inv-act-btn.edit{background:rgba(180,164,255,.14);color:var(--lav)}
+.inv-act-btn.del{background:rgba(240,90,90,.1);color:var(--red)}
+.inv-act-btn.adj{background:rgba(245,192,122,.12);color:var(--peach)}
+.inv-act-btn.stockin{background:rgba(126,207,173,.12);color:var(--mint)}
+/* Stock bars */
+.inv-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.inv-bars.two{grid-template-columns:repeat(2,1fr)}
+.inv-bar{background:var(--bg3);border-radius:7px;padding:8px 10px}
+.inv-bar-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:'Geist Mono',monospace}
+.inv-bar-val{font-size:15px;font-weight:700;margin-top:2px;font-family:'Geist Mono',monospace}
+.inv-bar-val.green{color:var(--green)}.inv-bar-val.red{color:var(--red)}.inv-bar-val.lav{color:var(--lav)}.inv-bar-val.peach{color:var(--peach)}.inv-bar-val.pink{color:var(--pink)}
+/* Low stock warning */
+.low-stock-warn{display:flex;align-items:center;gap:6px;background:rgba(240,90,90,.07);border:1px solid rgba(240,90,90,.18);border-radius:7px;padding:7px 11px;margin-top:7px;font-size:11px;color:var(--red);font-family:'Geist Mono',monospace}
+
+/* ═══════════════════════════════════════════
+   ACTIVITY LOG
+═══════════════════════════════════════════ */
+.log-date-header{padding:10px 20px 4px;font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.12em}
+.log-entry{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);margin:0 20px 7px;padding:14px 15px;display:flex;align-items:center;gap:13px;transition:background .14s}
+.log-icon-wrap{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.log-icon-wrap.sale{background:rgba(82,214,138,.12)}
+.log-icon-wrap.stock{background:rgba(180,164,255,.12)}
+.log-icon-wrap.adjust{background:rgba(245,192,122,.12)}
+.log-icon-wrap.expense{background:rgba(240,90,90,.1)}
+.log-info{flex:1;min-width:0}
+.log-desc{font-size:12px;font-weight:600;color:var(--text)}
+.log-time{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;margin-top:1px}
+.log-amount{font-family:'Geist Mono',monospace;font-size:13px;font-weight:700;flex-shrink:0}
+.log-amount.pos{color:var(--green)}.log-amount.neg{color:var(--red)}.log-amount.neutral{color:var(--lav)}
+
+/* ═══════════════════════════════════════════
+   CALENDAR
+═══════════════════════════════════════════ */
+.cal-header{padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between}
+.cal-month-nav{display:flex;align-items:center;gap:12px}
+.cal-month-name{font-size:18px;font-weight:800}
+.cal-nav-btn{width:30px;height:30px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:14px;transition:all .16s}
+.cal-nav-btn:active{transform:scale(.9)}
+.cal-year{font-size:11px;color:var(--text3);font-family:'Geist Mono',monospace}
+.cal-grid-header{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px;margin-bottom:5px}
+.cal-day-name{text-align:center;font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.04em;padding:5px 0;font-family:'Geist Mono',monospace}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 10px}
+.cal-cell{aspect-ratio:1;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .16s;padding:2px;position:relative}
+.cal-cell:active{transform:scale(.9)}
+.cal-cell.empty{pointer-events:none}
+.cal-cell.today{background:rgba(180,164,255,.14);border:1px solid rgba(180,164,255,.28)}
+.cal-cell.profit{background:rgba(82,214,138,.09)}
+.cal-cell.loss{background:rgba(240,90,90,.07)}
+.cal-cell.selected{border:1px solid var(--lav2)}
+.cal-day-num{font-size:11px;font-weight:600;color:var(--text2)}
+.cal-cell.today .cal-day-num{color:var(--lav);font-weight:700}
+.cal-day-pnl-label{font-size:8px;font-family:'Geist Mono',monospace;font-weight:700;margin-top:1px;width:100%;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-day-pnl-label.red{color:var(--red)}.cal-day-pnl-label.green{color:var(--green)}
+.cal-day-detail{margin:10px 16px 0;background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px}
+.cal-detail-date{font-size:12px;color:var(--text2);font-family:'Geist Mono',monospace;margin-bottom:10px}
+.cal-detail-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.cal-detail-row:last-child{border-bottom:none}
+.cal-detail-label{font-size:12px;color:var(--text2)}
+.cal-detail-val{font-size:13px;font-weight:700;font-family:'Geist Mono',monospace}
+.cal-detail-val.green{color:var(--green)}.cal-detail-val.red{color:var(--red)}.cal-detail-val.lav{color:var(--lav)}
+
+/* ═══════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════ */
+.settings-section{padding:0 16px 6px}
+.settings-section-title{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;padding:14px 0 7px}
+.settings-row{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:13px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;cursor:pointer;transition:background .14s}
+.settings-row:active{background:var(--bg3)}
+.settings-row-left{flex:1}
+.settings-row-label{font-size:14px;font-weight:600}
+.settings-row-sub{font-size:11px;color:var(--text2);font-family:'Geist Mono',monospace;margin-top:2px}
+.settings-row-right{color:var(--text3);font-size:13px;display:flex;align-items:center;gap:5px}
+.settings-val{font-family:'Geist Mono',monospace;font-size:12px;color:var(--lav)}
+
+/* ═══════════════════════════════════════════
+   TOGGLE
+═══════════════════════════════════════════ */
+.toggle{width:42px;height:23px;border-radius:12px;background:var(--bg4);position:relative;cursor:pointer;transition:background .18s;flex-shrink:0}
+.toggle.on{background:var(--lav2)}
+.toggle::after{content:'';width:17px;height:17px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:transform .18s}
+.toggle.on::after{transform:translateX(19px)}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn{width:100%;padding:14px;border-radius:var(--r2);font-family:'Geist',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .18s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--lav2),var(--mint));color:#111}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.btn-danger{background:rgba(240,90,90,.14);color:var(--red);border:1px solid rgba(240,90,90,.2)}
+.btn-pink{background:linear-gradient(135deg,var(--pink),var(--peach));color:#111}
+.btn-yellow{background:linear-gradient(135deg,var(--yellow),var(--peach));color:#111}
+.btn-green{background:linear-gradient(135deg,var(--green),var(--mint));color:#111}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATION BADGE
+═══════════════════════════════════════════ */
+.notif-badge{position:absolute;top:-3px;right:-3px;width:15px;height:15px;border-radius:50%;background:var(--red);font-size:9px;color:white;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+#toast{position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-18px);background:var(--bg3);border:1px solid var(--border2);border-radius:22px;padding:9px 18px;font-size:12px;color:var(--text);z-index:999;opacity:0;transition:all .26s;white-space:nowrap;pointer-events:none;max-width:calc(100% - 40px);text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════ */
+.empty-state{text-align:center;padding:54px 28px;color:var(--text3)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+.empty-text{font-size:13px;line-height:1.65}
+
+/* ═══════════════════════════════════════════
+   MISC UTILITY
+═══════════════════════════════════════════ */
+.divider{height:1px;background:var(--border);margin:7px 16px}
+.spacer{height:16px}
+.pill-tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-family:'Geist Mono',monospace;font-weight:600}
+.pill-tag.green{background:rgba(82,214,138,.12);color:var(--green)}
+.pill-tag.red{background:rgba(240,90,90,.12);color:var(--red)}
+.pill-tag.lav{background:rgba(155,135,245,.12);color:var(--lav2)}
+.pill-tag.yellow{background:rgba(245,224,122,.12);color:var(--yellow)}
+.pos-receipt{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:14px;margin-bottom:14px}
+.receipt-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--text2);font-family:'Geist Mono',monospace}
+.receipt-row.total{border-top:1px dashed var(--border2);margin-top:5px;padding-top:9px;font-size:15px;color:var(--text);font-weight:700}
+.receipt-row.total .val{color:var(--mint)}
+
+/* ═══════════════════════════════════════════
+   ANALYTICS
+═══════════════════════════════════════════ */
+.analytics-wrap{padding:0 16px 20px;animation:fadeUp .26s cubic-bezier(.25,.46,.45,.94) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.analytics-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.analytics-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:13px 14px}
+.analytics-stat-label{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.analytics-stat-val{font-size:20px;font-weight:700;color:var(--text)}
+.analytics-stat-val.green{color:var(--green)}.analytics-stat-val.red{color:var(--red)}.analytics-stat-val.lav{color:var(--lav)}.analytics-stat-val.peach{color:var(--peach)}
+.analytics-stat-sub{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.analytics-section-title{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;margin-top:4px}
+.pie-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:12px}
+.pie-canvas-row{display:flex;align-items:center;gap:14px}
+#pie-canvas{flex-shrink:0;animation:fadeIn .32s ease both}
+.pie-legend{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
+.pie-legend-item{display:flex;align-items:center;gap:7px}
+.pie-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pie-legend-name{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.pie-legend-pct{font-size:11px;font-family:'Geist Mono',monospace;color:var(--text2);flex-shrink:0}
+.leaderboard{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:12px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.lb-row:last-child{border-bottom:none}
+.lb-rank{font-size:12px;font-weight:800;font-family:'Geist Mono',monospace;color:var(--text3);width:22px;flex-shrink:0;text-align:center}
+.lb-emoji{font-size:18px;flex-shrink:0}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-size:12px;font-weight:700;color:var(--text)}
+.lb-bar-wrap{height:3px;background:var(--bg3);border-radius:2px;margin-top:4px;overflow:hidden}
+.lb-bar-fill{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.25,.46,.45,.94)}
+.lb-pct{font-size:12px;font-family:'Geist Mono',monospace;font-weight:700;color:var(--text2);flex-shrink:0}
+/* Revenue chart */
+.rev-chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:12px}
+.rev-chart-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px}
+#rev-chart-canvas{width:100%;display:block;animation:fadeIn .32s ease both}
+
+/* ═══════════════════════════════════════════
+   GOAL / STREAK
+═══════════════════════════════════════════ */
+.goal-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;margin:0 16px 10px}
+.goal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.goal-label{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+.goal-val{font-size:12px;font-family:'Geist Mono',monospace;font-weight:700;color:var(--lav)}
+.goal-bar-bg{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.goal-bar-fill{height:100%;border-radius:3px;transition:width .56s cubic-bezier(.25,.46,.45,.94)}
+.goal-pct{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;margin-top:5px;text-align:right}
+.streak-banner{margin:0 16px 10px;background:linear-gradient(135deg,rgba(180,164,255,.1),rgba(126,207,173,.07));border:1px solid rgba(180,164,255,.18);border-radius:var(--r2);padding:10px 14px;display:flex;align-items:center;gap:11px}
+.streak-fire{font-size:26px}
+.streak-info{flex:1}
+.streak-count{font-size:17px;font-weight:800;color:var(--lav)}
+.streak-label{font-size:11px;color:var(--text2);margin-top:1px}
+
+/* ═══════════════════════════════════════════
+   EXPENSES
+═══════════════════════════════════════════ */
+.expense-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px 17px;margin:0 20px 8px;display:flex;align-items:center;gap:13px}
+.expense-icon{width:36px;height:36px;border-radius:9px;background:rgba(240,90,90,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.expense-info{flex:1;min-width:0}
+.expense-name{font-size:13px;font-weight:600;color:var(--text)}
+.expense-cat{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;margin-top:1px;text-transform:uppercase;letter-spacing:.06em}
+.expense-date{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace}
+.expense-amount{font-size:14px;font-weight:700;font-family:'Geist Mono',monospace;color:var(--red);flex-shrink:0}
+.expense-summary{background:rgba(240,90,90,.07);border:1px solid rgba(240,90,90,.14);border-radius:var(--r2);margin:0 20px 12px;padding:14px 17px;display:flex;justify-content:space-between;align-items:center}
+.expense-summary-label{font-size:11px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+.expense-summary-val{font-size:17px;font-weight:700;color:var(--red);font-family:'Geist Mono',monospace}
+
+/* ═══════════════════════════════════════════
+   FLAVOR DETAIL MODAL
+═══════════════════════════════════════════ */
+.flavor-detail-hero{text-align:center;padding:18px 18px 14px}
+.flavor-detail-emoji{font-size:48px;margin-bottom:7px}
+.flavor-detail-name{font-size:21px;font-weight:800}
+.flavor-detail-tag{margin-top:5px}
+/* Stats grid in detail */
+.fds-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 16px 14px}
+.fds-card{background:var(--bg3);border-radius:9px;padding:10px;text-align:center;border:1px solid var(--border)}
+.fds-val{font-size:15px;font-weight:700;font-family:'Geist Mono',monospace}
+.fds-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;font-family:'Geist Mono',monospace}
+/* Pricing row */
+.fds-pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 16px 14px}
+/* Recent sales */
+.mini-history{background:var(--bg3);border-radius:var(--r2);overflow:hidden;border:1px solid var(--border)}
+.mini-history-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.mini-history-row:last-child{border-bottom:none}
+.mini-history-row .mh-date{color:var(--text3);font-family:'Geist Mono',monospace}
+.mini-history-row .mh-qty{color:var(--text2);font-family:'Geist Mono',monospace}
+.mini-history-row .mh-rev{color:var(--green);font-family:'Geist Mono',monospace;font-weight:700}
+
+/* ═══════════════════════════════════════════
+   STOCK ADJUSTMENT MODAL
+═══════════════════════════════════════════ */
+.adj-type-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px}
+.adj-type-btn{padding:10px 6px;border-radius:var(--r3);text-align:center;font-weight:700;font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .18s;font-family:'Geist Mono',monospace}
+.adj-type-btn.active.in{background:rgba(126,207,173,.15);color:var(--mint);border-color:rgba(126,207,173,.3)}
+.adj-type-btn.active.out{background:rgba(240,90,90,.12);color:var(--red);border-color:rgba(240,90,90,.25)}
+.adj-type-btn.active.manual{background:rgba(245,192,122,.12);color:var(--peach);border-color:rgba(245,192,122,.28)}
+.adj-preview{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r3);padding:11px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.adj-preview-label{font-size:11px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+.adj-preview-val{font-size:15px;font-weight:700;font-family:'Geist Mono',monospace}
+
+
+/* ═══════════════════════════════════════════
+   RESTOCK ALERTS
+═══════════════════════════════════════════ */
+.restock-row{display:flex;gap:7px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none}
+.restock-row::-webkit-scrollbar{display:none}
+.restock-chip{background:rgba(240,90,90,.09);border:1px solid rgba(240,90,90,.18);border-radius:18px;padding:5px 11px;font-size:11px;color:var(--red);font-family:'Geist Mono',monospace;white-space:nowrap;flex-shrink:0;cursor:pointer;transition:background .14s}
+.restock-chip:active{background:rgba(240,90,90,.18)}
+
+/* ═══════════════════════════════════════════
+   FAB
+═══════════════════════════════════════════ */
+.fab{position:absolute;right:18px;bottom:88px;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--lav2),var(--mint));box-shadow:0 4px 18px rgba(155,135,245,.45);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;z-index:90;transition:transform .16s cubic-bezier(.34,1.56,.64,1),box-shadow .16s}
+.fab:active{transform:scale(.88);box-shadow:0 2px 8px rgba(155,135,245,.35)}
+
+/* ═══════════════════════════════════════════
+   SEARCH BAR
+═══════════════════════════════════════════ */
+.search-bar{display:flex;align-items:center;gap:9px;background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:9px 14px;margin:0 16px 12px}
+.search-bar input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Geist',sans-serif;font-size:13px}
+.search-bar input::placeholder{color:var(--text3)}
+.search-icon{color:var(--text3);font-size:13px}
+
+/* ═══════════════════════════════════════════
+   COLOR WHEEL
+═══════════════════════════════════════════ */
+.color-wheel-wrapper{display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--bg3);padding:14px;border-radius:var(--r2);border:1px solid var(--border2)}
+.color-wheel-container{position:relative;width:150px;height:150px;display:flex;justify-content:center;align-items:center}
+#color-wheel-canvas{border-radius:50%;cursor:crosshair;display:block;width:150px;height:150px}
+.color-wheel-pointer{position:absolute;width:14px;height:14px;border:2px solid #fff;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 4px rgba(0,0,0,.6);top:50%;left:50%}
+.color-wheel-slider-container{width:100%;display:flex;flex-direction:column;gap:4px}
+.color-wheel-slider-container label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;font-family:'Geist Mono',monospace}
+.color-wheel-slider{-webkit-appearance:none;width:100%;height:7px;border-radius:4px;outline:none;background:linear-gradient(to right,#000,#fff);border:1px solid var(--border2);cursor:pointer}
+.color-wheel-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid var(--bg);cursor:pointer;box-shadow:var(--shadow2)}
+.color-wheel-preview{display:flex;align-items:center;gap:7px;width:100%;justify-content:center}
+.color-wheel-preview-indicator{width:16px;height:16px;border-radius:50%;border:1px solid var(--border2);display:inline-block}
+.color-wheel-preview-text{font-family:'Geist Mono',monospace;font-size:11px;color:var(--text2);text-transform:uppercase}
+
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div class="view active" id="view-home">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-icon">🍬</div>
+      <div class="logo-label">
+        <span class="logo-name">SweetLedger</span>
+        <span class="logo-sub" id="home-shop-name" onclick="openShopNameModal()" style="cursor:pointer">My Candy Shop <span style="font-size:10px;color:var(--text3)">▾</span></span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="icon-btn" style="position:relative" onclick="showNotifLog()">🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span></div>
+      <div class="icon-btn" onclick="switchView('settings')">⚙️</div>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-label" id="home-hero-label">TODAY'S REVENUE</div>
+      <div class="hero-amount"><span class="currency">₱</span><span id="home-revenue">0.00</span></div>
+      <div class="seg-ctrl" id="hero-seg">
+        <div class="seg-pill" id="hero-seg-pill"></div>
+        <div class="seg-btn active" id="seg-today" onclick="setHeroPeriod('today')">Today</div>
+        <div class="seg-btn" id="seg-lifetime" onclick="setHeroPeriod('lifetime')">Lifetime</div>
+      </div>
+      <div class="hero-change" style="margin-top:10px">
+        <span class="pos" id="home-profit-label">+₱0.00 profit</span>
+        <span class="pill" id="home-margin-label">0%</span>
+      </div>
+      <div class="hero-date" id="home-date"></div>
+      <div class="hero-eye" id="hero-eye-btn" onclick="toggleHeroPrivacy()">👁</div>
+    </div>
+    <!-- GOAL -->
+    <div class="goal-card" id="goal-card" style="display:none">
+      <div class="goal-header"><span class="goal-label">Daily Goal</span><span class="goal-val" id="goal-label-val"></span></div>
+      <div class="goal-bar-bg"><div class="goal-bar-fill" id="goal-bar"></div></div>
+      <div class="goal-pct" id="goal-pct-text"></div>
+    </div>
+    <!-- STREAK -->
+    <div class="streak-banner" id="streak-banner" style="display:none">
+      <div class="streak-fire">🔥</div>
+      <div class="streak-info">
+        <div class="streak-count" id="streak-count">0 days</div>
+        <div class="streak-label">Sales streak — keep it going!</div>
+      </div>
+    </div>
+    <!-- LOW STOCK -->
+    <div id="restock-section" style="display:none">
+      <div class="sec-header"><span class="sec-title">⚠️ Low Stock</span></div>
+      <div class="restock-row" id="restock-row"></div>
+    </div>
+    <!-- QUICK ACTIONS -->
+    <div class="quick-actions">
+      <div class="qa-btn" onclick="switchView('pos')"><div class="qa-icon pink">🛒</div><span class="qa-label">Sell</span></div>
+      <div class="qa-btn" onclick="openStockInModal()"><div class="qa-icon mint">📦</div><span class="qa-label">Stock In</span></div>
+      <div class="qa-btn" onclick="openExpenseModal()"><div class="qa-icon red">💸</div><span class="qa-label">Expense</span></div>
+      <div class="qa-btn" onclick="switchView('calendar')"><div class="qa-icon peach">📅</div><span class="qa-label">PnL Cal</span></div>
+    </div>
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Boxes Sold</div><div class="stat-val green" id="home-boxes-sold">0</div><div class="stat-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Pieces Sold</div><div class="stat-val lav" id="home-pieces-sold">0</div><div class="stat-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Total Stock</div><div class="stat-val peach" id="home-total-stock">0</div><div class="stat-sub">pieces left</div></div>
+      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-val red" id="home-expenses">₱0</div><div class="stat-sub">today</div></div>
+    </div>
+    <!-- FLAVORS -->
+    <div class="sec-header"><span class="sec-title">Flavors</span><span class="sec-action" onclick="openAddFlavorModal()">+ Add</span></div>
+    <div class="flavor-list" id="home-flavor-list">
+      <div class="empty-state"><div class="empty-icon">🍭</div><div class="empty-text">No flavors yet.<br>Add your first candy flavor!</div></div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ POS ═══════════════ -->
+<div class="view" id="view-pos">
+  <div class="pos-header">
+    <div class="pos-title">New Sale</div>
+    <div class="pos-subtitle">Record a candy sale</div>
+  </div>
+  <div class="scroll-area">
+    <!-- Sale type -->
+    <div class="sale-type-toggle">
+      <div class="sale-toggle-btn active box" id="sale-type-box" onclick="setSaleType('box')">📦 By Box</div>
+      <div class="sale-toggle-btn piece" id="sale-type-piece" onclick="setSaleType('piece')">🍬 By Piece</div>
+    </div>
+    <!-- DISCOUNT TOGGLE -->
+    <div class="disc-toggle-row">
+      <span class="disc-toggle-label">Apply Discount</span>
+      <div class="disc-toggle-right">
+        <span class="pill-tag yellow" id="disc-pct-label" style="display:none"></span>
+        <div class="toggle" id="disc-toggle" onclick="toggleDiscount()"></div>
+      </div>
+    </div>
+    <!-- DISCOUNT FIELDS (hidden until toggled) -->
+    <div id="disc-row" style="display:none;padding:0 16px 12px">
+      <div class="adj-type-row" style="margin-bottom:10px">
+        <div class="disc-type-btn active" id="disc-type-pct" onclick="setDiscType('pct')">% OFF</div>
+        <div class="disc-type-btn" id="disc-type-fixed" onclick="setDiscType('fixed')">₱ FIXED</div>
+        <div class="disc-type-btn" style="display:none" id="disc-type-dummy"></div>
+      </div>
+      <div class="adj-type-row" style="grid-template-columns:1fr;margin-bottom:0">
+        <div class="field" style="margin:0"><input type="number" id="disc-input" placeholder="0" min="0" oninput="updateNpDisplay()" style="font-size:18px;font-weight:700;text-align:center"></div>
+      </div>
+    </div>
+    <!-- FLAVOR SELECT -->
+    <div class="sec-header" style="padding-top:2px"><span class="sec-title">Select Flavor</span></div>
+    <div class="flavor-select-grid" id="pos-flavor-grid"></div>
+    <!-- NUMPAD -->
+    <div class="sec-header"><span class="sec-title">Quantity</span><span style="font-size:11px;color:var(--text3);font-family:'Geist Mono',monospace" id="pos-unit-label">boxes</span></div>
+    <div style="padding:0 16px">
+      <div class="np-display" id="np-display"><span class="np-placeholder">0</span></div>
+      <div id="pos-price-preview" style="font-family:'Geist Mono',monospace;font-size:12px;color:var(--text2);text-align:right;padding:4px 2px 10px">Select a flavor & qty</div>
+      <!-- DISCOUNT LIVE PREVIEW -->
+      <div id="disc-final-preview" style="display:none" class="disc-preview-inner" style="margin-bottom:10px">
+        <span class="disc-preview-label">Final Price</span>
+        <span class="disc-preview-val" id="disc-final-val">₱0.00</span>
+      </div>
+      <div class="numpad">
+        <div class="np-btn" onclick="npInput('1')">1</div><div class="np-btn" onclick="npInput('2')">2</div><div class="np-btn" onclick="npInput('3')">3</div>
+        <div class="np-btn" onclick="npInput('4')">4</div><div class="np-btn" onclick="npInput('5')">5</div><div class="np-btn" onclick="npInput('6')">6</div>
+        <div class="np-btn" onclick="npInput('7')">7</div><div class="np-btn" onclick="npInput('8')">8</div><div class="np-btn" onclick="npInput('9')">9</div>
+        <div class="np-btn action" onclick="npClear()">C</div><div class="np-btn" onclick="npInput('0')">0</div><div class="np-btn action" onclick="npBackspace()">⌫</div>
+      </div>
+      <div style="height:12px"></div>
+      <button class="btn btn-primary" onclick="confirmSale()">Confirm Sale ✓</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="switchView('home')">Cancel</button>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ INVENTORY ═══════════════ -->
+<div class="view" id="view-inventory">
+  <div class="topbar" style="padding-bottom:12px">
+    <div class="view-title">Inventory</div>
+    <div style="display:flex;gap:10px">
+      <div class="icon-btn" onclick="openAdjustModal()" title="Adjust Stock">⚖️</div>
+      <div class="icon-btn" onclick="openAddFlavorModal()">➕</div>
+    </div>
+  </div>
+  <div class="search-bar" style="margin-bottom:18px"><span class="search-icon">🔍</span><input type="text" id="inv-search" placeholder="Search flavors..." oninput="renderInventory()"></div>
+  <div class="scroll-area" style="padding-top:4px">
+    <div id="inv-list"></div>
+    <div class="spacer"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ LOG ═══════════════ -->
+<div class="view" id="view-log">
+  <div class="topbar" style="padding-bottom:10px">
+    <div class="view-title">Activity Log</div>
+    <div class="icon-btn" onclick="clearLogConfirm()" title="Clear Log">🗑️</div>
+  </div>
+  <div class="log-tabs">
+    <div class="log-tab-ctrl" id="log-tab-ctrl">
+      <div class="log-tab-pill" id="log-tab-pill"></div>
+      <div class="log-tab-btn active" id="log-tab-log" onclick="setLogTab('log')">Log</div>
+      <div class="log-tab-btn" id="log-tab-analytics" onclick="setLogTab('analytics')">Analytics</div>
+      <div class="log-tab-btn" id="log-tab-expenses" onclick="setLogTab('expenses')">Expenses</div>
+    </div>
+  </div>
+  <div class="scroll-area" style="padding-top:4px">
+    <div id="log-pane"><div id="log-list"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No activity yet.</div></div></div></div>
+    <div id="analytics-pane" style="display:none"><div class="analytics-wrap" id="analytics-content"></div></div>
+    <div id="expenses-pane" style="display:none">
+      <div style="padding:0 16px 10px;display:flex;justify-content:flex-end">
+        <button class="btn btn-danger" style="width:auto;padding:8px 15px;font-size:12px" onclick="openExpenseModal()">+ Add Expense</button>
+      </div>
+      <div id="expenses-list"></div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ CALENDAR ═══════════════ -->
+<div class="view" id="view-calendar">
+  <div class="cal-header">
+    <div>
+      <div class="view-title">PnL Calendar</div>
+      <div class="cal-year" id="cal-year-label"></div>
+    </div>
+    <div class="cal-month-nav">
+      <div class="cal-nav-btn" onclick="calChangeMonth(-1)">‹</div>
+      <div class="cal-month-name" id="cal-month-label"></div>
+      <div class="cal-nav-btn" onclick="calChangeMonth(1)">›</div>
+    </div>
+  </div>
+  <div class="scroll-area" style="padding-top:0">
+    <div class="cal-grid-header">
+      <div class="cal-day-name">S</div><div class="cal-day-name">M</div><div class="cal-day-name">T</div><div class="cal-day-name">W</div><div class="cal-day-name">T</div><div class="cal-day-name">F</div><div class="cal-day-name">S</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div id="cal-day-detail"></div>
+    <div style="margin:10px 16px 0">
+      <div class="sec-header" style="padding:0 0 8px"><span class="sec-title">Monthly Summary</span></div>
+      <div class="stats-row" style="padding:0 0 18px">
+        <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-val lav" id="cal-month-rev">₱0</div></div>
+        <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-val green" id="cal-month-profit">₱0</div></div>
+        <div class="stat-card"><div class="stat-label">Boxes Sold</div><div class="stat-val peach" id="cal-month-boxes">0</div></div>
+        <div class="stat-card"><div class="stat-label">Pieces Sold</div><div class="stat-val pink" id="cal-month-pieces">0</div></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ SETTINGS ═══════════════ -->
+<div class="view" id="view-settings">
+  <div class="topbar" style="padding-bottom:0"><div class="view-title">Settings</div></div>
+  <div class="scroll-area" style="padding-top:6px">
+    <div class="settings-section">
+      <div class="settings-section-title">Shop</div>
+      <div class="settings-row" onclick="openShopNameModal()">
+        <div class="settings-row-left"><div class="settings-row-label">Shop Name</div><div class="settings-row-sub" id="setting-shop-name">My Candy Shop</div></div>
+        <div class="settings-row-right">✏️</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Default Pricing</div>
+      <div class="settings-row" onclick="openSettingEdit('baseCost','Base Cost per Box (₱)','number')">
+        <div class="settings-row-left"><div class="settings-row-label">Base Cost / Box</div><div class="settings-row-sub">Your purchase price per box</div></div>
+        <div class="settings-row-right"><span class="settings-val" id="setting-base-cost">₱100</span> ›</div>
+      </div>
+      <div class="settings-row" onclick="openSettingEdit('sellPrice','Sell Price per Box (₱)','number')">
+        <div class="settings-row-left"><div class="settings-row-label">Sell Price / Box</div><div class="settings-row-sub">Revenue target per box</div></div>
+        <div class="settings-row-right"><span class="settings-val" id="setting-sell-price">₱300</span> ›</div>
+      </div>
+      <div class="settings-row" onclick="openSettingEdit('piecesPerBox','Pieces per Box','number')">
+        <div class="settings-row-left"><div class="settings-row-label">Pieces per Box</div><div class="settings-row-sub">Default box size</div></div>
+        <div class="settings-row-right"><span class="settings-val" id="setting-pieces-per-box">30</span> ›</div>
+      </div>
+      <div class="settings-row" onclick="openSettingEdit('lowStockThreshold','Low Stock Alert (pcs)','number')">
+        <div class="settings-row-left"><div class="settings-row-label">Low Stock Alert</div><div class="settings-row-sub">Warn when stock drops below this</div></div>
+        <div class="settings-row-right"><span class="settings-val" id="setting-low-stock">30</span> ›</div>
+      </div>
+      <div class="settings-row" onclick="openSettingEdit('dailyGoal','Daily Revenue Goal (₱)','number')">
+        <div class="settings-row-left"><div class="settings-row-label">Daily Revenue Goal</div><div class="settings-row-sub">Progress shown on home</div></div>
+        <div class="settings-row-right"><span class="settings-val" id="setting-daily-goal">₱0</span> ›</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Notifications</div>
+      <div class="settings-row">
+        <div class="settings-row-left"><div class="settings-row-label">Push Notifications</div><div class="settings-row-sub">Log sales & stock events</div></div>
+        <div class="settings-row-right"><div class="toggle" id="notif-toggle" onclick="toggleNotifications()"></div></div>
+      </div>
+      <div class="settings-row" onclick="requestNotifPermission()">
+        <div class="settings-row-left"><div class="settings-row-label">Request Permission</div><div class="settings-row-sub" id="notif-status">Tap to request access</div></div>
+        <div class="settings-row-right">🔔</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Data</div>
+      <div class="settings-row" onclick="exportData()">
+        <div class="settings-row-left"><div class="settings-row-label">Export Data (JSON)</div><div class="settings-row-sub">Download all shop data</div></div>
+        <div class="settings-row-right">📤</div>
+      </div>
+      <div class="settings-row" onclick="importDataPrompt()">
+        <div class="settings-row-left"><div class="settings-row-label">Import Data (JSON)</div><div class="settings-row-sub">Restore from backup</div></div>
+        <div class="settings-row-right">📥</div>
+      </div>
+      <div class="settings-row" onclick="exportCSV()">
+        <div class="settings-row-left"><div class="settings-row-label">Export Sales CSV</div><div class="settings-row-sub">Spreadsheet-ready sales data</div></div>
+        <div class="settings-row-right">📊</div>
+      </div>
+      <div class="settings-row" onclick="resetDailyConfirm()">
+        <div class="settings-row-left"><div class="settings-row-label">Reset Today's Sales</div><div class="settings-row-sub">Clears today's POS data only</div></div>
+        <div class="settings-row-right" style="color:var(--red)">🗑️</div>
+      </div>
+      <div class="settings-row" onclick="nukeAllDataConfirm()">
+        <div class="settings-row-left"><div class="settings-row-label">Wipe All Data</div><div class="settings-row-sub">Permanent — cannot be undone</div></div>
+        <div class="settings-row-right" style="color:var(--red)">💣</div>
+      </div>
+    </div>
+    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importData(event)">
+    <div class="spacer"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ BOTTOM NAV ═══════════════ -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-home" onclick="switchView('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+  <div class="nav-item" id="nav-pos" onclick="switchView('pos')"><span class="nav-icon">🛒</span><span class="nav-label">Sell</span></div>
+  <div class="nav-item" id="nav-inventory" onclick="switchView('inventory')"><span class="nav-icon">📦</span><span class="nav-label">Stock</span></div>
+  <div class="nav-item" id="nav-log" onclick="switchView('log')"><span class="nav-icon">📋</span><span class="nav-label">Log</span></div>
+  <div class="nav-item" id="nav-calendar" onclick="switchView('calendar')"><span class="nav-icon">📅</span><span class="nav-label">PnL</span></div>
+</div>
+<div id="toast"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════ -->
+
+<!-- ADD/EDIT FLAVOR -->
+<div class="modal-overlay" id="modal-flavor">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-flavor-title">Add Flavor</div>
+    <div class="modal-body">
+      <div class="field"><label>Flavor Name</label><input type="text" id="flavor-name-input" placeholder="e.g. Strawberry, Grape..."></div>
+      <div class="field"><label>Emoji Icon</label><input type="text" id="flavor-emoji-input" placeholder="🍓" maxlength="4"></div>
+      <div class="field-row">
+        <div class="field"><label>Cost / Box (₱)</label><input type="number" id="flavor-cost-input" placeholder="100"></div>
+        <div class="field"><label>Sell / Box (₱)</label><input type="number" id="flavor-sell-input" placeholder="300"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Pieces / Box</label><input type="number" id="flavor-pieces-input" placeholder="30"></div>
+        <div class="field"><label>Initial Stock (pcs)</label><input type="number" id="flavor-stock-input" placeholder="0"></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="flavor-notes-input" placeholder="Any special notes..."></textarea></div>
+      <div class="field">
+        <label>Color Tag</label>
+        <div class="color-wheel-wrapper">
+          <div class="color-wheel-container"><canvas id="color-wheel-canvas" width="150" height="150"></canvas><div class="color-wheel-pointer" id="color-wheel-pointer"></div></div>
+          <div class="color-wheel-slider-container"><label>Brightness</label><input type="range" class="color-wheel-slider" id="color-wheel-brightness" min="0" max="100" value="100"></div>
+          <div class="color-wheel-preview"><span class="color-wheel-preview-indicator" id="color-wheel-indicator"></span><span class="color-wheel-preview-text" id="color-wheel-text">pink</span></div>
+        </div>
+        <input type="hidden" id="flavor-color-input" value="pink">
+      </div>
+      <div style="height:6px"></div>
+      <button class="btn btn-primary" onclick="saveFlavor()">Save Flavor</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-flavor')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- STOCK IN -->
+<div class="modal-overlay" id="modal-stock-in">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Stock In</div>
+    <div class="modal-body">
+      <div class="field"><label>Flavor</label><select id="stock-in-flavor" onchange="calcStockIn()"></select></div>
+      <div class="field-row">
+        <div class="field"><label>Boxes Added</label><input type="number" id="stock-in-boxes" placeholder="0" oninput="calcStockIn()"></div>
+        <div class="field"><label>Extra Pieces</label><input type="number" id="stock-in-extra" placeholder="0" oninput="calcStockIn()"></div>
+      </div>
+      <div class="field"><label>Cost Paid (₱) — optional override</label><input type="number" id="stock-in-cost" placeholder="Auto-calculated"></div>
+      <div id="stock-in-summary" style="font-family:'Geist Mono',monospace;font-size:12px;color:var(--text2);padding:6px 0 12px"></div>
+      <button class="btn btn-pink" onclick="confirmStockIn()">Confirm Stock In 📦</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-stock-in')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADJUST STOCK -->
+<div class="modal-overlay" id="modal-adjust">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Adjust Stock</div>
+    <div class="modal-body">
+      <div class="field"><label>Flavor</label><select id="adj-flavor" onchange="updateAdjPreview()"></select></div>
+      <!-- Adjustment type -->
+      <div class="adj-type-row">
+        <div class="adj-type-btn active in" id="adj-type-in" onclick="setAdjType('in')">📦 Stock In</div>
+        <div class="adj-type-btn out" id="adj-type-out" onclick="setAdjType('out')">📤 Stock Out</div>
+        <div class="adj-type-btn manual" id="adj-type-manual" onclick="setAdjType('manual')">⚖️ Manual</div>
+      </div>
+      <div class="field"><label id="adj-delta-label">Pieces to Add</label><input type="number" id="adj-delta" placeholder="0" min="0" oninput="updateAdjPreview()"></div>
+      <div class="field"><label>Reason (optional)</label><input type="text" id="adj-reason" placeholder="e.g. Damaged, count correction..."></div>
+      <!-- Stock preview -->
+      <div class="adj-preview" id="adj-preview">
+        <div>
+          <div class="adj-preview-label">Current Stock</div>
+          <div class="adj-preview-val" id="adj-current-stock" style="color:var(--text2)">—</div>
+        </div>
+        <div style="font-size:18px;color:var(--text3)">→</div>
+        <div style="text-align:right">
+          <div class="adj-preview-label">Resulting Stock</div>
+          <div class="adj-preview-val" id="adj-result-stock" style="color:var(--lav)">—</div>
+        </div>
+      </div>
+      <button class="btn btn-yellow" onclick="confirmAdjust()">Apply Adjustment ⚖️</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-adjust')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLAVOR DETAIL -->
+<div class="modal-overlay" id="modal-flavor-detail">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-body" style="padding-top:0" id="flavor-detail-body"></div>
+  </div>
+</div>
+
+<!-- EXPENSE MODAL -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add Expense</div>
+    <div class="modal-body">
+      <div class="field"><label>Description</label><input type="text" id="exp-name" placeholder="e.g. Transport, Packaging..."></div>
+      <div class="field"><label>Amount (₱)</label><input type="number" id="exp-amount" placeholder="0.00" step="0.01"></div>
+      <div class="field">
+        <label>Category</label>
+        <select id="exp-category">
+          <option value="transport">🚗 Transport</option>
+          <option value="packaging">📦 Packaging</option>
+          <option value="supplies">🛒 Supplies</option>
+          <option value="utilities">💡 Utilities</option>
+          <option value="other">💸 Other</option>
+        </select>
+      </div>
+      <button class="btn btn-danger" onclick="saveExpense()">Record Expense 💸</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-expense')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTING EDIT -->
+<div class="modal-overlay" id="modal-setting-edit">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-setting-title">Edit Setting</div>
+    <div class="modal-body">
+      <div class="field"><label id="modal-setting-label">Value</label><input id="modal-setting-input" type="number"></div>
+      <button class="btn btn-primary" onclick="saveSettingEdit()">Save</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-setting-edit')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHOP NAME -->
+<div class="modal-overlay" id="modal-shop-name">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Shop Name</div>
+    <div class="modal-body">
+      <div class="field"><label>Name</label><input type="text" id="shop-name-input" placeholder="My Candy Shop"></div>
+      <button class="btn btn-primary" onclick="saveShopName()">Save</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-shop-name')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-confirm-title">Confirm</div>
+    <div class="modal-body">
+      <p id="modal-confirm-text" style="color:var(--text2);font-size:13px;margin-bottom:18px;line-height:1.7"></p>
+      <button class="btn btn-danger" id="modal-confirm-btn">Confirm</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-confirm')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="modal-overlay" id="modal-notif-log">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Notifications</div>
+    <div class="modal-body" id="notif-log-body" style="padding-top:0"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════
+const DB_KEY = 'sweetledger_v3';
+let data = null;
+
+function defaultData() {
+  return {
+    settings:{ shopName:'My Candy Shop', baseCost:100, sellPrice:300, piecesPerBox:30, notifEnabled:false, lowStockThreshold:30, dailyGoal:0 },
+    flavors:[], sales:[], stockIns:[], adjustments:[], notifLog:[], expenses:[]
+  };
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(DB_KEY) || localStorage.getItem('sweetledger_v2');
+    if (raw) { data = JSON.parse(raw); migrateData(); return; }
+  } catch(e) {}
+  data = defaultData(); saveData();
+}
+
+function migrateData() {
+  if (!data.notifLog)    data.notifLog = [];
+  if (!data.adjustments) data.adjustments = [];
+  if (!data.expenses)    data.expenses = [];
+  if (!data.settings.piecesPerBox)      data.settings.piecesPerBox = 30;
+  if (!data.settings.lowStockThreshold) data.settings.lowStockThreshold = 30;
+  if (!data.settings.dailyGoal)         data.settings.dailyGoal = 0;
+  data.flavors.forEach(f => { if (!f.notes) f.notes = ''; });
+  // Migrate sales without discount field
+  data.sales.forEach(s => { if (s.discount === undefined) s.discount = 0; if (s.discType === undefined) s.discType = 'pct'; });
+}
+
+let _saveTimer;
+function saveData(){clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>localStorage.setItem(DB_KEY,JSON.stringify(data)),120);}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function fmtPHP(n) { return '₱' + Number(n).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtPHPShort(n) { if (Math.abs(n)>=1000) return '₱'+(n/1000).toFixed(1)+'k'; return '₱'+Math.round(n); }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+const COLOR_MAP = { pink:'#f4a8be', mint:'#7ecfad', lav:'#b4a4ff', peach:'#f5c07a', yellow:'#f5e07a' };
+const BG_MAP   = { pink:'rgba(244,168,190,.14)', mint:'rgba(126,207,173,.14)', lav:'rgba(180,164,255,.14)', peach:'rgba(245,192,122,.14)', yellow:'rgba(245,224,122,.14)' };
+const PIE_COLORS = ['#f4a8be','#7ecfad','#b4a4ff','#f5c07a','#f5e07a','#ff8fab','#52d68a','#9b87f5','#f7b84b','#69db7c'];
+const EXP_ICONS = { transport:'🚗', packaging:'📦', supplies:'🛒', utilities:'💡', other:'💸' };
+
+function getFlavorById(id) { return data.flavors.find(f=>f.id===id); }
+function getTodaySales()    { return data.sales.filter(s=>s.ts.slice(0,10)===todayKey()); }
+function getTodayExpenses() { return data.expenses.filter(e=>e.ts.slice(0,10)===todayKey()); }
+
+function getFlavorStock(flavorId) {
+  const f = getFlavorById(flavorId); if (!f) return 0;
+  const inPieces = data.stockIns.filter(s=>s.flavorId===flavorId).reduce((a,s)=>a+s.pieces,0) + (f.initialStock||0);
+  const ppb = f.piecesPerBox || data.settings.piecesPerBox;
+  const soldPieces = data.sales.filter(s=>s.flavorId===flavorId).reduce((a,s)=> a+(s.type==='box'?s.qty*ppb:s.qty), 0);
+  const adj = data.adjustments.filter(a=>a.flavorId===flavorId).reduce((a,d)=>a+d.delta,0);
+  return Math.max(0, inPieces - soldPieces + adj);
+}
+
+function getDateData(dateKey) {
+  const sales = data.sales.filter(s=>s.ts.slice(0,10)===dateKey);
+  const expenses = data.expenses.filter(e=>e.ts.slice(0,10)===dateKey).reduce((a,e)=>a+e.amount,0);
+  const revenue = sales.reduce((a,s)=>a+s.totalRevenue,0);
+  const profit  = sales.reduce((a,s)=>a+s.profit,0);
+  const boxes   = sales.filter(s=>s.type==='box').reduce((a,s)=>a+s.qty,0);
+  const pieces  = sales.filter(s=>s.type==='piece').reduce((a,s)=>a+s.qty,0);
+  const flavorCounts = {};
+  sales.forEach(s=>{ flavorCounts[s.flavorId]=(flavorCounts[s.flavorId]||0)+s.totalRevenue; });
+  let topFlavorName=null, maxRev=-1;
+  Object.keys(flavorCounts).forEach(fid=>{ if(flavorCounts[fid]>maxRev){maxRev=flavorCounts[fid];const f=getFlavorById(fid);if(f)topFlavorName=`${f.emoji||'🍬'} ${f.name}`;}});
+  return { revenue, profit, boxes, pieces, count:sales.length, topFlavor:topFlavorName, expenses, netProfit:profit-expenses };
+}
+
+// ═══════════════════════════════════════════
+// STREAK & TODAY HELPERS
+// ═══════════════════════════════════════════
+function calcStreak() {
+  const keys=new Set(data.sales.map(s=>s.ts.slice(0,10)));
+  let streak=0,d=new Date();
+  while(true){const k=d.toISOString().slice(0,10);if(keys.has(k)){streak++;d.setDate(d.getDate()-1);}else break;}
+  return streak;
+}
+function sumBy(arr,fn){return arr.reduce((a,x)=>a+fn(x),0);}
+
+// ═══════════════════════════════════════════
+// HERO STATE
+// ═══════════════════════════════════════════
+let heroPeriod = 'today';
+let heroHidden = false;
+const MASK = '…,…';
+function maskVal(str) { return heroHidden ? MASK : str; }
+function maskPHP(n)   { return heroHidden ? '₱'+MASK : fmtPHP(n); }
+
+function setHeroPeriod(period) {
+  heroPeriod = period;
+  document.getElementById('seg-today').classList.toggle('active', period==='today');
+  document.getElementById('seg-lifetime').classList.toggle('active', period!=='today');
+  _slidePill('hero-seg','hero-seg-pill', period==='today'?0:1);
+  renderHome();
+}
+function toggleHeroPrivacy() {
+  heroHidden=!heroHidden;
+  document.getElementById('hero-eye-btn').textContent=heroHidden?'🙈':'👁';
+  renderHome();
+}
+
+// ═══════════════════════════════════════════
+// PILL SLIDER
+// ═══════════════════════════════════════════
+function _slidePill(ctrlId, pillId, idx) {
+  const ctrl=document.getElementById(ctrlId), pill=document.getElementById(pillId);
+  if(!ctrl||!pill) return;
+  const btns=ctrl.querySelectorAll('.seg-btn,.log-tab-btn');
+  if(!btns[idx]) return;
+  const br=btns[idx].getBoundingClientRect(), cr=ctrl.getBoundingClientRect();
+  pill.style.width=br.width+'px';
+  pill.style.transform='translateX('+(br.left-cr.left-3)+'px)';
+}
+function _initPills() {
+  requestAnimationFrame(()=>{
+    _slidePill('hero-seg','hero-seg-pill',heroPeriod==='today'?0:1);
+    _slidePill('log-tab-ctrl','log-tab-pill',logTab==='log'?0:logTab==='analytics'?1:2);
+  });
+}
+
+// ═══════════════════════════════════════════
+// VIEW SWITCHING
+// ═══════════════════════════════════════════
+let currentView = 'home';
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const viewEl = document.getElementById('view-'+name);
+  if(viewEl) viewEl.classList.add('active');
+  const ni = document.getElementById('nav-'+name);
+  if(ni) {
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    ni.classList.add('active');
+  }
+  currentView=name;
+  // Scroll every view's scroll-area back to top
+  if(viewEl) { const sa=viewEl.querySelector('.scroll-area'); if(sa) sa.scrollTop=0; }
+  if(name==='home')      renderHome();
+  if(name==='pos')       renderPos();
+  if(name==='inventory') renderInventory();
+  if(name==='log')       renderLog();
+  if(name==='calendar')  renderCalendar();
+  if(name==='settings')  renderSettings();
+}
+
+// ═══════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════
+function renderHome() {
+  const todaySales    = getTodaySales();
+  const activeSales   = heroPeriod==='today' ? todaySales : data.sales;
+  const revenue  = sumBy(activeSales, s=>s.totalRevenue);
+  const profit   = sumBy(activeSales, s=>s.profit);
+  const margin   = revenue>0?Math.round(profit/revenue*100):0;
+  const todayExp = sumBy(getTodayExpenses(), e=>e.amount);
+  const boxesSold  = sumBy(todaySales.filter(s=>s.type==='box'), s=>s.qty);
+  const piecesSold = sumBy(todaySales.filter(s=>s.type==='piece'), s=>s.qty);
+  const totalStock = sumBy(data.flavors, f=>getFlavorStock(f.id));
+
+  document.getElementById('home-hero-label').textContent = heroPeriod==='today'?"TODAY'S REVENUE":'LIFETIME REVENUE';
+  document.getElementById('home-revenue').textContent = maskVal(revenue.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  const profitEl = document.getElementById('home-profit-label');
+  profitEl.textContent = heroHidden?'₱'+MASK+' profit':(profit>=0?'+':'')+fmtPHP(profit)+' profit';
+  profitEl.className = profit>=0?'pos':'neg';
+  const marginEl = document.getElementById('home-margin-label');
+  marginEl.textContent = heroHidden?'—':margin+'%';
+  marginEl.className = 'pill'+(profit<0?' neg':'');
+  const dateStr = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('home-date').textContent = heroPeriod==='today'?dateStr:'All-time · as of '+dateStr;
+  document.getElementById('home-boxes-sold').textContent  = boxesSold;
+  document.getElementById('home-pieces-sold').textContent = piecesSold;
+  document.getElementById('home-total-stock').textContent = totalStock;
+  document.getElementById('home-expenses').textContent    = heroHidden?'₱'+MASK:fmtPHPShort(todayExp);
+  document.getElementById('home-shop-name').innerHTML = (data.settings.shopName||'My Candy Shop')+' <span style="font-size:10px;color:var(--text3)">▾</span>';
+
+  // Daily goal
+  const goal = data.settings.dailyGoal||0;
+  const goalCard = document.getElementById('goal-card');
+  if (goal>0) {
+    goalCard.style.display='';
+    const tdRev = todaySales.reduce((a,s)=>a+s.totalRevenue,0);
+    const pct = Math.min(100,(tdRev/goal)*100);
+    const goalColor = pct>=100?'#52d68a':pct>=60?'#f5c07a':'#9b87f5';
+    document.getElementById('goal-bar').style.cssText=`width:${pct.toFixed(1)}%;background:${goalColor}`;
+    document.getElementById('goal-label-val').textContent = heroHidden?'₱'+MASK:fmtPHPShort(tdRev)+' / '+fmtPHPShort(goal);
+    document.getElementById('goal-pct-text').textContent = pct>=100?'🎉 Goal reached!':pct.toFixed(0)+'% of daily goal';
+    document.getElementById('goal-pct-text').style.color = pct>=100?'var(--green)':'var(--text3)';
+  } else goalCard.style.display='none';
+
+  // Streak
+  const streak=calcStreak();
+  const sb=document.getElementById('streak-banner');
+  if(streak>=3){sb.style.display='';document.getElementById('streak-count').textContent=streak+' day streak';}else sb.style.display='none';
+
+  // Low stock alerts
+  const threshold=data.settings.lowStockThreshold||30;
+  const lowFlavors=data.flavors.filter(f=>getFlavorStock(f.id)<threshold);
+  const restockSec=document.getElementById('restock-section');
+  if(lowFlavors.length>0){
+    restockSec.style.display='';
+    document.getElementById('restock-row').innerHTML=lowFlavors.map(f=>`<div class="restock-chip" onclick="openStockInForFlavor('${f.id}')">${f.emoji||'🍬'} ${f.name} · ${getFlavorStock(f.id)} pcs</div>`).join('');
+  } else restockSec.style.display='none';
+
+  requestAnimationFrame(()=>_slidePill('hero-seg','hero-seg-pill',heroPeriod==='today'?0:1));
+
+  // Flavor list
+  const list=document.getElementById('home-flavor-list');
+  if(!data.flavors.length){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">🍭</div><div class="empty-text">No flavors yet.<br>Add your first candy flavor!</div></div>';
+    return;
+  }
+  list.innerHTML=data.flavors.map(f=>{
+    const stock=getFlavorStock(f.id);
+    const tdSales=todaySales.filter(s=>s.flavorId===f.id);
+    const tdRev=tdSales.reduce((a,s)=>a+s.totalRevenue,0);
+    const tdProfit=tdSales.reduce((a,s)=>a+s.profit,0);
+    const isLow=stock<threshold;
+    return `<div class="flavor-card" onclick="openFlavorDetail('${f.id}')">
+      <div class="flavor-avatar" style="background:${BG_MAP[f.color]||BG_MAP.pink}">${f.emoji||'🍬'}</div>
+      <div class="flavor-info">
+        <div class="flavor-name">${f.name}${isLow?` <span style="font-size:9px;color:var(--red);font-family:'Geist Mono',monospace;border:1px solid rgba(240,90,90,.3);border-radius:4px;padding:1px 4px">LOW</span>`:''}</div>
+        <div class="flavor-sub">${stock} pcs · ${fmtPHP(f.sellPrice||data.settings.sellPrice)}/box</div>
+      </div>
+      <div class="flavor-right">
+        <div class="flavor-val">${heroHidden?'₱'+MASK:fmtPHPShort(tdRev)}</div>
+        <div class="flavor-change ${tdProfit>=0?'pos':'neg'}">${tdProfit>=0?'+':''}${heroHidden?MASK:fmtPHPShort(tdProfit)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// POS — with enhanced discount
+// ═══════════════════════════════════════════
+let posState = { saleType:'box', flavorId:null, qty:'', discountEnabled:false, discType:'pct' };
+
+function renderPos() {
+  posState.qty=''; posState.flavorId=null; posState.discountEnabled=false; posState.discType='pct';
+  document.getElementById('disc-toggle').className='toggle';
+  document.getElementById('disc-row').style.display='none';
+  document.getElementById('disc-pct-label').style.display='none';
+  document.getElementById('disc-final-preview').style.display='none';
+  document.getElementById('disc-input').value='';
+  document.getElementById('disc-type-pct').className='disc-type-btn active';
+  document.getElementById('disc-type-fixed').className='disc-type-btn';
+  updateNpDisplay(); renderPosFlavorGrid();
+}
+
+function setSaleType(t) {
+  posState.saleType=t; posState.qty='';
+  document.getElementById('sale-type-box').className='sale-toggle-btn'+(t==='box'?' active box':'');
+  document.getElementById('sale-type-piece').className='sale-toggle-btn'+(t==='piece'?' active piece':'');
+  document.getElementById('pos-unit-label').textContent=t==='box'?'boxes':'pieces';
+  updateNpDisplay(); renderPosFlavorGrid();
+}
+
+function toggleDiscount() {
+  posState.discountEnabled=!posState.discountEnabled;
+  document.getElementById('disc-toggle').className='toggle'+(posState.discountEnabled?' on':'');
+  document.getElementById('disc-row').style.display=posState.discountEnabled?'':'none';
+  if(!posState.discountEnabled){
+    document.getElementById('disc-pct-label').style.display='none';
+    document.getElementById('disc-final-preview').style.display='none';
+  }
+  updateNpDisplay();
+}
+
+function setDiscType(type) {
+  posState.discType=type;
+  document.getElementById('disc-type-pct').className='disc-type-btn'+(type==='pct'?' active':'');
+  document.getElementById('disc-type-fixed').className='disc-type-btn'+(type==='fixed'?' active':'');
+  document.getElementById('disc-input').placeholder = type==='pct'?'% off':'₱ off';
+  document.getElementById('disc-input').value='';
+  updateNpDisplay();
+}
+
+function renderPosFlavorGrid() {
+  const grid=document.getElementById('pos-flavor-grid');
+  if(!data.flavors.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🍭</div><div class="empty-text">Add flavors first!</div></div>';return;}
+  const threshold=data.settings.lowStockThreshold||30;
+  grid.innerHTML=data.flavors.map(f=>{
+    const stock=getFlavorStock(f.id);
+    const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+    const pricePerPiece=(f.sellPrice||data.settings.sellPrice)/ppb;
+    const displayPrice=posState.saleType==='box'?fmtPHP(f.sellPrice||data.settings.sellPrice)+'/box':fmtPHP(pricePerPiece)+'/pc';
+    const isLow=stock<threshold;
+    return `<div class="fs-card${posState.flavorId===f.id?' selected':''}${isLow?' low-stock':''}" onclick="selectPosFlavor('${f.id}')">
+      <div class="fs-emoji">${f.emoji||'🍬'}</div>
+      <div class="fs-name">${f.name}</div>
+      <div class="fs-stock">${stock} pcs left${isLow?' ⚠️':''}</div>
+      <div class="fs-price">${displayPrice}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectPosFlavor(id) { posState.flavorId=id; renderPosFlavorGrid(); updateNpDisplay(); }
+function npInput(v) { if(posState.qty.length>=6) return; posState.qty=(posState.qty+v).replace(/^0+/,'')||'0'; updateNpDisplay(); }
+function npClear()    { posState.qty=''; updateNpDisplay(); }
+function npBackspace(){ posState.qty=posState.qty.slice(0,-1); updateNpDisplay(); }
+
+function _calcDiscountedRevenue(baseRevenue) {
+  if (!posState.discountEnabled) return baseRevenue;
+  const val=parseFloat(document.getElementById('disc-input').value)||0;
+  if (posState.discType==='pct') return Math.max(0, baseRevenue*(1-val/100));
+  return Math.max(0, baseRevenue-val);
+}
+
+function updateNpDisplay() {
+  const disp=document.getElementById('np-display');
+  const prev=document.getElementById('pos-price-preview');
+  const qty=parseInt(posState.qty)||0;
+  disp.innerHTML=qty>0?`<span>${qty}</span>`:`<span class="np-placeholder">${posState.saleType==='box'?'# boxes':'# pieces'}</span>`;
+  if(!posState.flavorId||qty===0){prev.textContent='Select a flavor & qty';document.getElementById('disc-final-preview').style.display='none';return;}
+  const f=getFlavorById(posState.flavorId);
+  const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+  let baseRevenue, cost;
+  if(posState.saleType==='box'){baseRevenue=qty*(f.sellPrice||data.settings.sellPrice);cost=qty*(f.baseCost||data.settings.baseCost);}
+  else{baseRevenue=qty*(f.sellPrice||data.settings.sellPrice)/ppb;cost=qty*(f.baseCost||data.settings.baseCost)/ppb;}
+  const revenue=_calcDiscountedRevenue(baseRevenue);
+  const profit=revenue-cost;
+  const discVal=parseFloat(document.getElementById('disc-input')?.value)||0;
+  const pctLabel=document.getElementById('disc-pct-label');
+  if(posState.discountEnabled&&discVal>0){
+    pctLabel.style.display='';
+    pctLabel.textContent=posState.discType==='pct'?`-${discVal}%`:`-₱${discVal}`;
+  } else pctLabel.style.display='none';
+  prev.innerHTML=`${fmtPHP(baseRevenue)} base &nbsp;·&nbsp; <span style="color:${profit>=0?'var(--green)':'var(--red)'}">${profit>=0?'+':''}${fmtPHP(profit)}</span>`;
+  const fp=document.getElementById('disc-final-preview');
+  const fv=document.getElementById('disc-final-val');
+  if(posState.discountEnabled&&discVal>0){fp.style.display='flex';fv.textContent=fmtPHP(revenue)+' final';}else fp.style.display='none';
+}
+
+function confirmSale() {
+  const qty=parseInt(posState.qty)||0;
+  if(!posState.flavorId){showToast('⚠️ Select a flavor first');return;}
+  if(qty<=0){showToast('⚠️ Enter quantity');return;}
+  const f=getFlavorById(posState.flavorId);
+  const stock=getFlavorStock(posState.flavorId);
+  const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+  const piecesNeeded=posState.saleType==='box'?qty*ppb:qty;
+  if(piecesNeeded>stock){showToast(`❌ Not enough stock! (${stock} pcs left)`);return;}
+  let baseRevenue, cost;
+  if(posState.saleType==='box'){baseRevenue=qty*(f.sellPrice||data.settings.sellPrice);cost=qty*(f.baseCost||data.settings.baseCost);}
+  else{baseRevenue=qty*(f.sellPrice||data.settings.sellPrice)/ppb;cost=qty*(f.baseCost||data.settings.baseCost)/ppb;}
+  const revenue=_calcDiscountedRevenue(baseRevenue);
+  const profit=revenue-cost;
+  const discVal=posState.discountEnabled?(parseFloat(document.getElementById('disc-input').value)||0):0;
+  const sale={id:uid(),flavorId:f.id,type:posState.saleType,qty,totalRevenue:revenue,profit,cost,discount:discVal,discType:posState.discType,ts:new Date().toISOString()};
+  data.sales.push(sale); saveData();
+  const discStr=discVal>0?(posState.discType==='pct'?` (${discVal}% off)`:` (₱${discVal} off)`):'';
+  const msg=`Sold ${qty} ${posState.saleType}(s) of ${f.name} — ${fmtPHP(revenue)}${discStr}`;
+  addNotif(msg); sendPushNotif('SweetLedger Sale 🍬',msg);
+  showToast(`✅ Sale recorded! ${fmtPHP(revenue)}`);
+  posState.qty=''; posState.flavorId=null;
+  renderPos(); renderHome();
+}
+
+// ═══════════════════════════════════════════
+// INVENTORY
+// ═══════════════════════════════════════════
+function renderInventory() {
+  const q=(document.getElementById('inv-search')?.value||'').toLowerCase();
+  const list=document.getElementById('inv-list');
+  let flavors=data.flavors;
+  if(q) flavors=flavors.filter(f=>f.name.toLowerCase().includes(q));
+  if(!flavors.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">No flavors found.</div></div>';return;}
+  const threshold=data.settings.lowStockThreshold||30;
+  list.innerHTML=flavors.map(f=>{
+    const stock=getFlavorStock(f.id);
+    const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+    const boxes=Math.floor(stock/ppb), remainder=stock%ppb;
+    const ltSales=data.sales.filter(s=>s.flavorId===f.id);
+    const ltRev=ltSales.reduce((a,s)=>a+s.totalRevenue,0);
+    const ltProfit=ltSales.reduce((a,s)=>a+s.profit,0);
+    const marginPct=ltRev>0?Math.round(ltProfit/ltRev*100):0;
+    const isLow=stock<threshold;
+    return `<div class="inv-card">
+      <div class="inv-card-top">
+        <div class="inv-card-name">
+          <div class="inv-card-emoji" style="background:${BG_MAP[f.color]||BG_MAP.pink};width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center">${f.emoji||'🍬'}</div>
+          <div class="inv-card-label">${f.name}<small>₱${f.baseCost||data.settings.baseCost} cost · ₱${f.sellPrice||data.settings.sellPrice} sell · ${marginPct}% margin</small></div>
+        </div>
+        <div class="inv-actions">
+          <div class="inv-act-btn stockin" onclick="openStockInForFlavor('${f.id}')" title="Stock In">📦</div>
+          <div class="inv-act-btn adj" onclick="openAdjustForFlavor('${f.id}')" title="Adjust">⚖️</div>
+          <div class="inv-act-btn edit" onclick="openEditFlavor('${f.id}')">✏️</div>
+          <div class="inv-act-btn del" onclick="deleteFlavor('${f.id}')">🗑️</div>
+        </div>
+      </div>
+      <!-- Primary stock metrics -->
+      <div class="inv-bars">
+        <div class="inv-bar"><div class="inv-bar-label">Total Pcs</div><div class="inv-bar-val lav">${stock}</div></div>
+        <div class="inv-bar"><div class="inv-bar-label">Boxes</div><div class="inv-bar-val green">${boxes}</div></div>
+        <div class="inv-bar"><div class="inv-bar-label">Loose</div><div class="inv-bar-val ${remainder>0?'peach':''}">${remainder}</div></div>
+      </div>
+      <!-- Lifetime financial metrics -->
+      <div class="inv-bars">
+        <div class="inv-bar"><div class="inv-bar-label">Lifetime Rev</div><div class="inv-bar-val lav">${fmtPHPShort(ltRev)}</div></div>
+        <div class="inv-bar"><div class="inv-bar-label">Profit</div><div class="inv-bar-val ${ltProfit>=0?'green':'red'}">${ltProfit>=0?'+':''}${fmtPHPShort(ltProfit)}</div></div>
+        <div class="inv-bar"><div class="inv-bar-label">Sales</div><div class="inv-bar-val">${ltSales.length}</div></div>
+      </div>
+      ${isLow?`<div class="low-stock-warn">⚠️ Low — ${stock} pcs left <span onclick="openStockInForFlavor('${f.id}')" style="margin-left:auto;cursor:pointer;color:var(--lav)">Restock →</span></div>`:''}
+      ${f.notes?`<div style="margin-top:7px;font-size:11px;color:var(--text3);font-family:'Geist Mono',monospace">📝 ${f.notes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// LOG + ANALYTICS + EXPENSES
+// ═══════════════════════════════════════════
+let logTab = 'log';
+
+function setLogTab(tab) {
+  logTab=tab;
+  ['log','analytics','expenses'].forEach(t=>{
+    document.getElementById('log-tab-'+t).classList.toggle('active',t===tab);
+    const pane=document.getElementById(t==='log'?'log-pane':t+'-pane');
+    pane.style.display=t===tab?'':'none';
+    if(t===tab){ pane.style.animation='fadeUp .18s cubic-bezier(.25,.46,.45,.94) both'; }
+  });
+  // Scroll log scroll-area to top on tab change
+  const sa=document.querySelector('#view-log .scroll-area');
+  if(sa) sa.scrollTop=0;
+  _slidePill('log-tab-ctrl','log-tab-pill',tab==='log'?0:tab==='analytics'?1:2);
+  if(tab==='analytics') renderAnalytics();
+  if(tab==='expenses')  renderExpenses();
+}
+
+function renderLog() {
+  requestAnimationFrame(()=>_slidePill('log-tab-ctrl','log-tab-pill',logTab==='log'?0:logTab==='analytics'?1:2));
+  if(logTab==='analytics'){renderAnalytics();return;}
+  if(logTab==='expenses'){renderExpenses();return;}
+  const list=document.getElementById('log-list');
+  const events=[
+    ...data.sales.map(s=>({ts:s.ts,type:'sale',data:s})),
+    ...data.stockIns.map(s=>({ts:s.ts,type:'stock',data:s})),
+    ...data.adjustments.map(a=>({ts:a.ts,type:'adjust',data:a})),
+    ...data.expenses.map(e=>({ts:e.ts,type:'expense',data:e}))
+  ].sort((a,b)=>b.ts.localeCompare(a.ts));
+  if(!events.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No activity yet.</div></div>';return;}
+  let html='',lastDate='';
+  events.forEach(e=>{
+    const d=e.ts.slice(0,10);
+    if(d!==lastDate){html+=`<div class="log-date-header">${d===todayKey()?'Today':fmtDate(e.ts)}</div>`;lastDate=d;}
+    if(e.type==='sale'){
+      const f=getFlavorById(e.data.flavorId);
+      const discStr=e.data.discount>0?(e.data.discType==='pct'?` <span style="color:var(--yellow);font-size:10px;font-family:'Geist Mono',monospace">-${e.data.discount}%</span>`:` <span style="color:var(--yellow);font-size:10px;font-family:'Geist Mono',monospace">-₱${e.data.discount}</span>`):'';
+      html+=`<div class="log-entry"><div class="log-icon-wrap sale">🛒</div><div class="log-info"><div class="log-desc">${f?.emoji||'🍬'} ${f?.name||'Unknown'} · ${e.data.qty} ${e.data.type}(s)${discStr}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount pos">+${fmtPHP(e.data.totalRevenue)}</div></div>`;
+    } else if(e.type==='stock'){
+      const f=getFlavorById(e.data.flavorId);
+      html+=`<div class="log-entry"><div class="log-icon-wrap stock">📦</div><div class="log-info"><div class="log-desc">${f?.name||'Unknown'} · Stock In +${e.data.pieces} pcs</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount neutral">${fmtPHP(e.data.costPaid)}</div></div>`;
+    } else if(e.type==='expense'){
+      html+=`<div class="log-entry"><div class="log-icon-wrap expense">${EXP_ICONS[e.data.category]||'💸'}</div><div class="log-info"><div class="log-desc">${e.data.name}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount neg">-${fmtPHP(e.data.amount)}</div></div>`;
+    } else {
+      const f=getFlavorById(e.data.flavorId);
+      html+=`<div class="log-entry"><div class="log-icon-wrap adjust">⚖️</div><div class="log-info"><div class="log-desc">${f?.name||'Unknown'} · Adjustment${e.data.reason?' ('+e.data.reason+')':''}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount ${e.data.delta>=0?'pos':'neg'}">${e.data.delta>=0?'+':''}${e.data.delta} pcs</div></div>`;
+    }
+  });
+  list.innerHTML=html;
+}
+
+function renderExpenses() {
+  const list=document.getElementById('expenses-list');
+  if(!data.expenses.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">💸</div><div class="empty-text">No expenses logged yet.</div></div>';return;}
+  const sorted=[...data.expenses].sort((a,b)=>b.ts.localeCompare(a.ts));
+  const total=sumBy(sorted,e=>e.amount);
+  // Group by category for summary
+  const byCat={};
+  sorted.forEach(e=>{byCat[e.category]=(byCat[e.category]||0)+e.amount;});
+  list.innerHTML=`<div class="expense-summary"><div><div class="expense-summary-label">Total Expenses</div><div class="expense-summary-val">${fmtPHP(total)}</div></div><div style="font-size:12px;color:var(--text3);font-family:'Geist Mono',monospace;text-align:right">${Object.entries(byCat).map(([k,v])=>`${EXP_ICONS[k]||'💸'} ${fmtPHPShort(v)}`).join('<br>')}</div></div>`
+    +sorted.map(e=>`<div class="expense-card">
+      <div class="expense-icon">${EXP_ICONS[e.category]||'💸'}</div>
+      <div class="expense-info">
+        <div class="expense-name">${e.name}</div>
+        <div class="expense-cat">${e.category}</div>
+        <div class="expense-date">${fmtDate(e.ts)} · ${fmtTime(e.ts)}</div>
+      </div>
+      <div class="expense-amount">-${fmtPHP(e.amount)}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════
+const PIE_COLOR_KEYS=['pink','mint','lav','peach','yellow'];
+
+function getFlavorUnits(flavorId) {
+  return data.sales.filter(s=>s.flavorId===flavorId).reduce((a,s)=>{
+    const f=getFlavorById(flavorId); if(!f) return a;
+    return a+(s.type==='box'?s.qty*(f.piecesPerBox||data.settings.piecesPerBox):s.qty);
+  },0);
+}
+
+function buildFlavorRanking() {
+  const rows=data.flavors.map((f,i)=>({
+    flavor:f, units:getFlavorUnits(f.id),
+    colorKey:f.color||PIE_COLOR_KEYS[i%PIE_COLOR_KEYS.length],
+    color:COLOR_MAP[f.color]||PIE_COLORS[i%PIE_COLORS.length]
+  })).filter(r=>r.units>0).sort((a,b)=>b.units-a.units);
+  const total=rows.reduce((a,r)=>a+r.units,0);
+  rows.forEach(r=>{r.pct=total>0?(r.units/total*100):0;});
+  return {rows,total};
+}
+
+function renderAnalytics() {
+  const container=document.getElementById('analytics-content');
+  if(!data.sales.length){container.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">No sales data yet.</div></div>';return;}
+  const allSales=data.sales;
+  const ltRevenue=sumBy(allSales,s=>s.totalRevenue);
+  const ltProfit=sumBy(allSales,s=>s.profit);
+  const ltBoxes=sumBy(allSales.filter(s=>s.type==='box'),s=>s.qty);
+  const ltPieces=sumBy(allSales.filter(s=>s.type==='piece'),s=>s.qty);
+  const ltExpenses=sumBy(data.expenses,e=>e.amount);
+  const ltNet=ltProfit-ltExpenses;
+  const ltMargin=ltRevenue>0?Math.round(ltProfit/ltRevenue*100):0;
+  const {rows,total}=buildFlavorRanking();
+  const best=rows[0],worst=rows[rows.length-1];
+  const avgDailyRev=_calcAvgDailyRevenue();
+  const discSales=allSales.filter(s=>s.discount>0).length;
+
+  let html=`<div class="analytics-section-title">Lifetime Overview</div>
+  <div class="analytics-stat-grid">
+    <div class="analytics-stat"><div class="analytics-stat-label">Revenue</div><div class="analytics-stat-val lav">${fmtPHPShort(ltRevenue)}</div><div class="analytics-stat-sub">${fmtPHP(ltRevenue)}</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-label">Gross Profit</div><div class="analytics-stat-val ${ltProfit>=0?'green':'red'}">${ltProfit>=0?'+':''}${fmtPHPShort(ltProfit)}</div><div class="analytics-stat-sub">${ltMargin}% margin</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-label">Net Profit</div><div class="analytics-stat-val ${ltNet>=0?'green':'red'}">${ltNet>=0?'+':''}${fmtPHPShort(ltNet)}</div><div class="analytics-stat-sub">after ${fmtPHPShort(ltExpenses)} expenses</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-label">Avg Daily</div><div class="analytics-stat-val peach">${fmtPHPShort(avgDailyRev)}</div><div class="analytics-stat-sub">per active day</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-label">Boxes Sold</div><div class="analytics-stat-val">${ltBoxes}</div><div class="analytics-stat-sub">lifetime</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-label">Pieces Sold</div><div class="analytics-stat-val">${ltPieces}</div><div class="analytics-stat-sub">individual</div></div>
+    ${best?`<div class="analytics-stat"><div class="analytics-stat-label">Best Seller 🏆</div><div class="analytics-stat-val" style="font-size:15px">${best.flavor.emoji||'🍬'} ${best.flavor.name}</div><div class="analytics-stat-sub">${best.units} units · ${best.pct.toFixed(1)}%</div></div>`:''}
+    ${worst&&worst!==best?`<div class="analytics-stat"><div class="analytics-stat-label">Least Sold</div><div class="analytics-stat-val" style="font-size:15px">${worst.flavor.emoji||'🍬'} ${worst.flavor.name}</div><div class="analytics-stat-sub">${worst.units} units · ${worst.pct.toFixed(1)}%</div></div>`:''}
+    <div class="analytics-stat"><div class="analytics-stat-label">Transactions</div><div class="analytics-stat-val">${allSales.length}</div><div class="analytics-stat-sub">total sales</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-label">Discounted</div><div class="analytics-stat-val yellow">${discSales}</div><div class="analytics-stat-sub">with discount</div></div>
+  </div>
+  <div class="analytics-section-title">Revenue — Last 7 Days</div>
+  <div class="rev-chart-wrap"><canvas id="rev-chart-canvas" height="80"></canvas></div>`;
+
+  if(rows.length>0){
+    html+=`<div class="analytics-section-title">Flavor Distribution</div>
+    <div class="pie-wrap"><div class="pie-canvas-row"><canvas id="pie-canvas" width="140" height="140"></canvas><div class="pie-legend" id="pie-legend"></div></div></div>`;
+    html+=`<div class="analytics-section-title">Flavor Leaderboard</div><div class="leaderboard">`;
+    rows.forEach((r,i)=>{
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+      const delay=(i*.04).toFixed(2);
+      html+=`<div class="lb-row" style="animation:fadeUp .22s ${delay}s cubic-bezier(.25,.46,.45,.94) both">
+        <div class="lb-rank">${medal}</div><div class="lb-emoji">${r.flavor.emoji||'🍬'}</div>
+        <div class="lb-info"><div class="lb-name">${r.flavor.name}</div><div class="lb-bar-wrap"><div class="lb-bar-fill" style="width:${r.pct.toFixed(1)}%;background:${r.color}"></div></div></div>
+        <div class="lb-pct">${r.pct.toFixed(1)}%</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  container.innerHTML=html;
+  requestAnimationFrame(()=>{_drawRevChart();if(rows.length>0)_drawPie(rows,total);});
+}
+
+function _calcAvgDailyRevenue() {
+  const days=new Set(data.sales.map(s=>s.ts.slice(0,10)));
+  if(!days.size) return 0;
+  return sumBy(data.sales,s=>s.totalRevenue)/days.size;
+}
+
+function _drawRevChart() {
+  const canvas=document.getElementById('rev-chart-canvas'); if(!canvas) return;
+  const days=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  const vals=days.map(d=>getDateData(d).revenue);
+  const maxVal=Math.max(...vals,1);
+  const W=canvas.offsetWidth||300,H=80;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const barW=Math.floor((W-40)/7)-4;
+  vals.forEach((v,i)=>{
+    const x=20+i*((W-40)/7);
+    const barH=Math.max(2,(v/maxVal)*(H-24));
+    const y=H-12-barH;
+    const grad=ctx.createLinearGradient(0,y,0,H-12);
+    grad.addColorStop(0,'#9b87f5'); grad.addColorStop(1,'rgba(155,135,245,.28)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x,y,barW,barH,3); else ctx.rect(x,y,barW,barH);
+    ctx.fill();
+    ctx.fillStyle='#55536a'; ctx.font='9px Geist Mono,monospace'; ctx.textAlign='center';
+    const day=new Date(days[i]+'T00:00:00').toLocaleDateString('en-PH',{weekday:'short'}).slice(0,1);
+    ctx.fillText(day,x+barW/2,H-1);
+    if(v>0){ctx.fillStyle='#8e8c9e';ctx.fillText('₱'+(v>=1000?(v/1000).toFixed(1)+'k':Math.round(v)),x+barW/2,y-3);}
+  });
+}
+
+function _drawPie(rows,total) {
+  const canvas=document.getElementById('pie-canvas'); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const cx=70,cy=70,r=62,hole=34;
+  ctx.clearRect(0,0,140,140);
+  let startAngle=-Math.PI/2;
+  rows.forEach((row,i)=>{
+    const slice=(row.units/total)*2*Math.PI;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,startAngle,startAngle+slice); ctx.closePath();
+    ctx.fillStyle=row.color; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r+1,startAngle+slice-.005,startAngle+slice+.005); ctx.closePath();
+    ctx.fillStyle='#0d0d10'; ctx.fill();
+    startAngle+=slice;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,hole,0,2*Math.PI); ctx.fillStyle='#0d0d10'; ctx.fill();
+  ctx.fillStyle='#eeedf4'; ctx.font='bold 18px Geist,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(total,cx,cy-7);
+  ctx.fillStyle='#55536a'; ctx.font='10px Geist Mono,monospace'; ctx.fillText('units',cx,cy+9);
+  const legend=document.getElementById('pie-legend');
+  if(legend) legend.innerHTML=rows.map(row=>`<div class="pie-legend-item"><div class="pie-legend-dot" style="background:${row.color}"></div><div class="pie-legend-name">${row.flavor.emoji||''} ${row.flavor.name}</div><div class="pie-legend-pct">${row.pct.toFixed(1)}%</div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════
+let calState={year:new Date().getFullYear(),month:new Date().getMonth(),selected:null};
+const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalendar() {
+  const {year,month}=calState;
+  document.getElementById('cal-month-label').textContent=MONTH_NAMES[month];
+  document.getElementById('cal-year-label').textContent=year;
+  const firstDay=new Date(year,month,1).getDay(),daysInMonth=new Date(year,month+1,0).getDate(),today=new Date();
+  let html='';
+  for(let i=0;i<firstDay;i++) html+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const dk=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dd=getDateData(dk);
+    const isToday=today.getFullYear()===year&&today.getMonth()===month&&today.getDate()===d;
+    let cls='cal-cell';
+    if(isToday) cls+=' today';
+    if(dd.count>0) cls+=dd.netProfit>=0?' profit':' loss';
+    if(calState.selected===dk) cls+=' selected';
+    html+=`<div class="${cls}" onclick="calSelectDay('${dk}')"><span class="cal-day-num">${d}</span>${dd.revenue>0?`<div class="cal-day-pnl-label green">${fmtPHPShort(dd.revenue)}</div>`:''}${dd.expenses>0?`<div class="cal-day-pnl-label red">-${fmtPHPShort(dd.expenses)}</div>`:''}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  let mRev=0,mProfit=0,mBoxes=0,mPieces=0;
+  for(let d=1;d<=daysInMonth;d++){
+    const dk=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dd=getDateData(dk); mRev+=dd.revenue; mProfit+=dd.netProfit; mBoxes+=dd.boxes; mPieces+=dd.pieces;
+  }
+  document.getElementById('cal-month-rev').textContent=fmtPHPShort(mRev);
+  document.getElementById('cal-month-profit').textContent=fmtPHPShort(mProfit);
+  document.getElementById('cal-month-profit').className='stat-val '+(mProfit>=0?'green':'red');
+  document.getElementById('cal-month-boxes').textContent=mBoxes;
+  document.getElementById('cal-month-pieces').textContent=mPieces;
+  renderCalDayDetail();
+}
+
+function calSelectDay(dk){calState.selected=calState.selected===dk?null:dk;renderCalendar();}
+
+function renderCalDayDetail() {
+  const det=document.getElementById('cal-day-detail');
+  if(!calState.selected){det.innerHTML='';return;}
+  const dd=getDateData(calState.selected);
+  const d=new Date(calState.selected+'T00:00:00');
+  det.innerHTML=`<div class="cal-day-detail">
+    <div class="cal-detail-date">${d.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Gross Revenue</span><span class="cal-detail-val lav">${fmtPHP(dd.revenue)}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Gross Profit</span><span class="cal-detail-val ${dd.profit>=0?'green':'red'}">${dd.profit>=0?'+':''}${fmtPHP(dd.profit)}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Expenses</span><span class="cal-detail-val red">-${fmtPHP(dd.expenses)}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Net Profit</span><span class="cal-detail-val ${dd.netProfit>=0?'green':'red'}">${dd.netProfit>=0?'+':''}${fmtPHP(dd.netProfit)}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Best Flavor</span><span class="cal-detail-val">${dd.topFlavor||'<span style="color:var(--text3)">None</span>'}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Boxes Sold</span><span class="cal-detail-val">${dd.boxes}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Pieces Sold</span><span class="cal-detail-val">${dd.pieces}</span></div>
+    <div class="cal-detail-row"><span class="cal-detail-label">Transactions</span><span class="cal-detail-val">${dd.count}</span></div>
+  </div>`;
+}
+function calChangeMonth(dir){calState.month+=dir;if(calState.month>11){calState.month=0;calState.year++;}if(calState.month<0){calState.month=11;calState.year--;}calState.selected=null;renderCalendar();}
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+function renderSettings() {
+  document.getElementById('setting-shop-name').textContent=data.settings.shopName||'My Candy Shop';
+  document.getElementById('setting-base-cost').textContent='₱'+data.settings.baseCost;
+  document.getElementById('setting-sell-price').textContent='₱'+data.settings.sellPrice;
+  document.getElementById('setting-pieces-per-box').textContent=data.settings.piecesPerBox;
+  document.getElementById('setting-low-stock').textContent=data.settings.lowStockThreshold||30;
+  document.getElementById('setting-daily-goal').textContent='₱'+(data.settings.dailyGoal||0);
+  document.getElementById('notif-toggle').className='toggle'+(data.settings.notifEnabled?' on':'');
+}
+
+let editingSettingKey='';
+function openSettingEdit(key,label,type) {
+  editingSettingKey=key;
+  document.getElementById('modal-setting-title').textContent=label;
+  document.getElementById('modal-setting-label').textContent=label;
+  const inp=document.getElementById('modal-setting-input');
+  inp.type=type; inp.value=data.settings[key]||0;
+  openModal('modal-setting-edit');
+}
+function saveSettingEdit() {
+  const val=parseFloat(document.getElementById('modal-setting-input').value)||0;
+  data.settings[editingSettingKey]=val; saveData(); renderSettings(); closeModal('modal-setting-edit'); showToast('✅ Setting saved');
+}
+function openShopNameModal(){document.getElementById('shop-name-input').value=data.settings.shopName||'';openModal('modal-shop-name');}
+function saveShopName(){const n=document.getElementById('shop-name-input').value.trim();if(!n)return;data.settings.shopName=n;saveData();renderSettings();renderHome();closeModal('modal-shop-name');showToast('✅ Name saved');}
+function toggleNotifications(){if(!data.settings.notifEnabled&&Notification.permission!=='granted'){requestNotifPermission();return;}data.settings.notifEnabled=!data.settings.notifEnabled;saveData();renderSettings();}
+function requestNotifPermission(){if('Notification' in window)Notification.requestPermission().then(p=>{document.getElementById('notif-status').textContent='Permission: '+p;if(p==='granted'){data.settings.notifEnabled=true;saveData();renderSettings();}});}
+
+// ═══════════════════════════════════════════
+// EXPENSE MODAL
+// ═══════════════════════════════════════════
+function openExpenseModal(){
+  document.getElementById('exp-name').value='';
+  document.getElementById('exp-amount').value='';
+  openModal('modal-expense');
+}
+function saveExpense() {
+  const name=document.getElementById('exp-name').value.trim();
+  const amount=parseFloat(document.getElementById('exp-amount').value)||0;
+  const category=document.getElementById('exp-category').value;
+  if(!name||amount<=0){showToast('⚠️ Fill in name & amount');return;}
+  data.expenses.push({id:uid(),name,amount,category,ts:new Date().toISOString()});
+  saveData(); addNotif(`Expense: ${name} — ${fmtPHP(amount)}`);
+  closeModal('modal-expense'); renderHome(); showToast(`💸 Expense: ${fmtPHP(amount)}`);
+
+}
+
+// ═══════════════════════════════════════════
+// ADJUST STOCK MODAL — redesigned
+// ═══════════════════════════════════════════
+let adjType = 'in'; // 'in' | 'out' | 'manual'
+
+function setAdjType(type) {
+  adjType=type;
+  ['in','out','manual'].forEach(t=>{
+    document.getElementById('adj-type-'+t).className='adj-type-btn '+t+(t===type?' active':'');
+  });
+  const label=document.getElementById('adj-delta-label');
+  if(type==='in') label.textContent='Pieces to Add';
+  else if(type==='out') label.textContent='Pieces to Remove';
+  else label.textContent='Adjust by (+ or −)';
+  document.getElementById('adj-delta').value='';
+  updateAdjPreview();
+}
+
+function updateAdjPreview() {
+  const flavorId=document.getElementById('adj-flavor').value;
+  const f=getFlavorById(flavorId); if(!f) return;
+  const currentStock=getFlavorStock(flavorId);
+  let rawVal=parseFloat(document.getElementById('adj-delta').value)||0;
+  let delta=0;
+  if(adjType==='in') delta=Math.abs(rawVal);
+  else if(adjType==='out') delta=-Math.abs(rawVal);
+  else delta=rawVal;
+  const resulting=Math.max(0,currentStock+delta);
+  document.getElementById('adj-current-stock').textContent=currentStock+' pcs';
+  const resEl=document.getElementById('adj-result-stock');
+  resEl.textContent=resulting+' pcs';
+  resEl.style.color=resulting<currentStock?'var(--red)':resulting>currentStock?'var(--green)':'var(--lav)';
+}
+
+function openAdjustModal() {
+  const sel=document.getElementById('adj-flavor');
+  if(!data.flavors.length){showToast('⚠️ No flavors yet');return;}
+  sel.innerHTML=data.flavors.map(f=>`<option value="${f.id}">${f.emoji||'🍬'} ${f.name} (${getFlavorStock(f.id)} pcs)</option>`).join('');
+  document.getElementById('adj-delta').value='';
+  document.getElementById('adj-reason').value='';
+  setAdjType('in');
+  updateAdjPreview();
+  openModal('modal-adjust');
+}
+function openAdjustForFlavor(id){openAdjustModal();document.getElementById('adj-flavor').value=id;updateAdjPreview();}
+
+function confirmAdjust() {
+  const flavorId=document.getElementById('adj-flavor').value;
+  let rawVal=parseFloat(document.getElementById('adj-delta').value)||0;
+  const reason=document.getElementById('adj-reason').value.trim();
+  if(!flavorId||rawVal===0){showToast('⚠️ Select flavor & enter amount');return;}
+  let delta=0;
+  if(adjType==='in') delta=Math.abs(rawVal);
+  else if(adjType==='out') delta=-Math.abs(rawVal);
+  else delta=rawVal;
+  const currentStock=getFlavorStock(flavorId);
+  if(currentStock+delta<0){showToast('❌ Would result in negative stock');return;}
+  data.adjustments.push({id:uid(),flavorId,delta,reason,ts:new Date().toISOString()});
+  saveData(); closeModal('modal-adjust'); renderInventory(); renderHome();
+  showToast(`⚖️ Adjusted by ${delta>0?'+':''}${delta} pcs`);
+}
+
+// ═══════════════════════════════════════════
+// STOCK IN
+// ═══════════════════════════════════════════
+function openStockInModal() {
+  const sel=document.getElementById('stock-in-flavor');
+  if(!data.flavors.length){showToast('⚠️ Add a flavor first');return;}
+  sel.innerHTML=data.flavors.map(f=>`<option value="${f.id}">${f.emoji||'🍬'} ${f.name}</option>`).join('');
+  ['stock-in-boxes','stock-in-extra','stock-in-cost'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('stock-in-summary').textContent='';
+  openModal('modal-stock-in');
+}
+function openStockInForFlavor(id){openStockInModal();document.getElementById('stock-in-flavor').value=id;calcStockIn();}
+
+function calcStockIn() {
+  const flavorId=document.getElementById('stock-in-flavor').value;
+  const f=getFlavorById(flavorId); if(!f) return;
+  const boxes=parseInt(document.getElementById('stock-in-boxes').value)||0;
+  const extra=parseInt(document.getElementById('stock-in-extra').value)||0;
+  const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+  const totalPcs=boxes*ppb+extra;
+  const autoCost=boxes*(f.baseCost||data.settings.baseCost);
+  document.getElementById('stock-in-summary').textContent=totalPcs>0?`${totalPcs} pieces total · auto-cost ${fmtPHP(autoCost)}`:'';
+}
+
+function confirmStockIn() {
+  const flavorId=document.getElementById('stock-in-flavor').value;
+  const f=getFlavorById(flavorId); if(!f){showToast('⚠️ Select a flavor');return;}
+  const boxes=parseInt(document.getElementById('stock-in-boxes').value)||0;
+  const extra=parseInt(document.getElementById('stock-in-extra').value)||0;
+  const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+  const totalPcs=boxes*ppb+extra;
+  if(totalPcs<=0){showToast('⚠️ Enter boxes or pieces');return;}
+  const autoCost=boxes*(f.baseCost||data.settings.baseCost);
+  const costPaid=parseFloat(document.getElementById('stock-in-cost').value)||autoCost;
+  data.stockIns.push({id:uid(),flavorId,boxes,pieces:totalPcs,costPaid,ts:new Date().toISOString()});
+  saveData();
+  const msg=`Stocked in ${totalPcs} pcs of ${f.name} (${boxes} boxes)`;
+  addNotif(msg); sendPushNotif('SweetLedger Stock 📦',msg);
+  renderHome(); renderInventory(); closeModal('modal-stock-in');
+  showToast(`📦 +${totalPcs} pcs added!`);
+
+}
+
+// ═══════════════════════════════════════════
+// FLAVOR DETAIL MODAL — redesigned
+// ═══════════════════════════════════════════
+function openFlavorDetail(id) {
+  const f=getFlavorById(id);
+  const stock=getFlavorStock(id);
+  const allSales=data.sales.filter(s=>s.flavorId===id);
+  const ltRev=allSales.reduce((a,s)=>a+s.totalRevenue,0);
+  const ltProfit=allSales.reduce((a,s)=>a+s.profit,0);
+  const margin=ltRev>0?Math.round(ltProfit/ltRev*100):0;
+  const units=getFlavorUnits(id);
+  const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+  const recentSales=[...allSales].sort((a,b)=>b.ts.localeCompare(a.ts)).slice(0,5);
+  const colorTag=f.color||'pink';
+
+  document.getElementById('flavor-detail-body').innerHTML=`
+    <div class="flavor-detail-hero">
+      <div style="width:64px;height:64px;border-radius:18px;background:${BG_MAP[colorTag]||BG_MAP.pink};display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 10px">${f.emoji||'🍬'}</div>
+      <div class="flavor-detail-name">${f.name}</div>
+      <div style="margin-top:6px"><span class="pill-tag ${colorTag}">${colorTag}</span></div>
+    </div>
+    <!-- Quick stats 3-col -->
+    <div class="fds-grid">
+      <div class="fds-card"><div class="fds-val" style="color:var(--lav)">${stock}</div><div class="fds-label">In Stock</div></div>
+      <div class="fds-card"><div class="fds-val" style="color:var(--green)">${units}</div><div class="fds-label">Units Sold</div></div>
+      <div class="fds-card"><div class="fds-val" style="color:var(--peach)">${margin}%</div><div class="fds-label">Margin</div></div>
+      <div class="fds-card"><div class="fds-val" style="color:var(--lav)">${fmtPHPShort(ltRev)}</div><div class="fds-label">Revenue</div></div>
+      <div class="fds-card"><div class="fds-val" style="color:${ltProfit>=0?'var(--green)':'var(--red)'}">${ltProfit>=0?'+':''}${fmtPHPShort(ltProfit)}</div><div class="fds-label">Profit</div></div>
+      <div class="fds-card"><div class="fds-val">${allSales.length}</div><div class="fds-label">Sales</div></div>
+    </div>
+    <!-- Pricing -->
+    <div style="padding:0 16px 12px">
+      <div style="font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Pricing</div>
+      <div class="fds-grid">
+        <div class="fds-card"><div class="fds-val" style="font-size:13px">${fmtPHP(f.baseCost||data.settings.baseCost)}</div><div class="fds-label">Cost/Box</div></div>
+        <div class="fds-card"><div class="fds-val" style="font-size:13px">${fmtPHP(f.sellPrice||data.settings.sellPrice)}</div><div class="fds-label">Sell/Box</div></div>
+        <div class="fds-card"><div class="fds-val" style="font-size:13px">${ppb}</div><div class="fds-label">Pcs/Box</div></div>
+      </div>
+    </div>
+    ${f.notes?`<div style="padding:0 16px 12px;font-size:12px;color:var(--text2)">📝 ${f.notes}</div>`:''}
+    <!-- Recent sales -->
+    <div style="padding:0 16px 14px">
+      <div style="font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Recent Sales</div>
+      <div class="mini-history">
+        ${recentSales.length?recentSales.map(s=>`<div class="mini-history-row">
+          <span class="mh-date">${fmtDate(s.ts)}</span>
+          <span class="mh-qty">${s.qty} ${s.type}(s)</span>
+          <span class="mh-rev">${fmtPHP(s.totalRevenue)}</span>
+        </div>`).join(''):'<div style="padding:12px;color:var(--text3);font-size:12px">No sales yet</div>'}
+      </div>
+    </div>
+    <!-- Actions -->
+    <div style="padding:0 16px">
+      <button class="btn btn-primary" onclick="openStockInForFlavor('${id}');closeModal('modal-flavor-detail')">📦 Stock In</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="openEditFlavor('${id}');closeModal('modal-flavor-detail')">✏️ Edit Flavor</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-flavor-detail')">Close</button>
+    </div>`;
+  openModal('modal-flavor-detail');
+}
+
+// ═══════════════════════════════════════════
+// FLAVOR CRUD
+// ═══════════════════════════════════════════
+let editingFlavorId=null;
+
+function openAddFlavorModal() {
+  editingFlavorId=null;
+  document.getElementById('modal-flavor-title').textContent='Add Flavor';
+  ['flavor-name-input','flavor-emoji-input','flavor-cost-input','flavor-sell-input','flavor-pieces-input','flavor-stock-input','flavor-notes-input'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('flavor-color-input').value='pink';
+  updateColorWheelSelection('pink');
+  openModal('modal-flavor');
+}
+
+function openEditFlavor(id) {
+  editingFlavorId=id;
+  const f=getFlavorById(id);
+  document.getElementById('modal-flavor-title').textContent='Edit Flavor';
+  document.getElementById('flavor-name-input').value=f.name||'';
+  document.getElementById('flavor-emoji-input').value=f.emoji||'';
+  document.getElementById('flavor-cost-input').value=f.baseCost||'';
+  document.getElementById('flavor-sell-input').value=f.sellPrice||'';
+  document.getElementById('flavor-pieces-input').value=f.piecesPerBox||'';
+  document.getElementById('flavor-stock-input').value=f.initialStock||'';
+  document.getElementById('flavor-notes-input').value=f.notes||'';
+  document.getElementById('flavor-color-input').value=f.color||'pink';
+  updateColorWheelSelection(f.color||'pink');
+  openModal('modal-flavor');
+}
+
+function saveFlavor() {
+  const name=document.getElementById('flavor-name-input').value.trim();
+  if(!name){showToast('⚠️ Enter a flavor name');return;}
+  const flavor={
+    id:editingFlavorId||uid(), name,
+    emoji:document.getElementById('flavor-emoji-input').value.trim()||'🍬',
+    baseCost:parseFloat(document.getElementById('flavor-cost-input').value)||data.settings.baseCost,
+    sellPrice:parseFloat(document.getElementById('flavor-sell-input').value)||data.settings.sellPrice,
+    piecesPerBox:parseInt(document.getElementById('flavor-pieces-input').value)||data.settings.piecesPerBox,
+    initialStock:parseInt(document.getElementById('flavor-stock-input').value)||0,
+    color:document.getElementById('flavor-color-input').value||'pink',
+    notes:document.getElementById('flavor-notes-input').value.trim()
+  };
+  if(editingFlavorId){const idx=data.flavors.findIndex(f=>f.id===editingFlavorId);if(idx>=0)data.flavors[idx]=flavor;}
+  else data.flavors.push(flavor);
+  saveData(); closeModal('modal-flavor'); renderHome(); renderInventory();
+  showToast(editingFlavorId?'✅ Flavor updated':'✅ Flavor added!');
+
+}
+
+function deleteFlavor(id) {
+  showConfirm('Delete Flavor','This removes the flavor and all associated data permanently.',()=>{
+    data.flavors=data.flavors.filter(f=>f.id!==id);
+    data.sales=data.sales.filter(s=>s.flavorId!==id);
+    data.stockIns=data.stockIns.filter(s=>s.flavorId!==id);
+    data.adjustments=data.adjustments.filter(a=>a.flavorId!==id);
+    saveData(); renderHome(); renderInventory(); showToast('🗑️ Flavor deleted');
+  });
+}
+
+// ═══════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════
+function addNotif(msg){data.notifLog.unshift({msg,ts:new Date().toISOString()});if(data.notifLog.length>100)data.notifLog.pop();saveData();updateNotifBadge();}
+function updateNotifBadge(){const badge=document.getElementById('notif-badge'),n=data.notifLog.length;if(n>0){badge.style.display='flex';badge.textContent=n>9?'9+':n;}else badge.style.display='none';}
+function showNotifLog() {
+  const body=document.getElementById('notif-log-body');
+  body.innerHTML=data.notifLog.length?data.notifLog.map(n=>`<div class="log-entry" style="margin:0 0 5px;background:var(--bg3)"><div class="log-icon-wrap" style="background:rgba(180,164,255,.1)">🔔</div><div class="log-info"><div class="log-desc">${n.msg}</div><div class="log-time">${fmtDate(n.ts)} ${fmtTime(n.ts)}</div></div></div>`).join('')
+    :'<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">No notifications yet.</div></div>';
+  openModal('modal-notif-log');
+}
+function sendPushNotif(title,body){
+  if(!data.settings.notifEnabled||!('Notification' in window)||Notification.permission!=='granted') return;
+  try{new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🍬</text></svg>'});}catch(e){}
+}
+
+// ═══════════════════════════════════════════
+// MODALS & CONFIRMS
+// ═══════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showConfirm(title,text,onConfirm){
+  document.getElementById('modal-confirm-title').textContent=title;
+  document.getElementById('modal-confirm-text').textContent=text;
+  const btn=document.getElementById('modal-confirm-btn');
+  btn.onclick=()=>{onConfirm();closeModal('modal-confirm');};
+  openModal('modal-confirm');
+}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+let toastTimer;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);}
+
+function clearLogConfirm(){showConfirm('Clear Activity Log','This removes all log entries. Your flavor data and settings are kept.',()=>{data.notifLog=[];saveData();updateNotifBadge();renderLog();showToast('🗑️ Log cleared');});}
+function resetDailyConfirm(){showConfirm("Reset Today's Sales","Clears today's POS data only. Flavors and inventory remain.",()=>{const td=todayKey();data.sales=data.sales.filter(s=>s.ts.slice(0,10)!==td);saveData();renderHome();showToast('🗑️ Today\'s sales cleared');});}
+function nukeAllDataConfirm(){showConfirm('⚠️ Wipe ALL Data','Permanently deletes every sale, flavor, stock record and expense. There is no recovery.',()=>{data=defaultData();saveData();renderHome();renderInventory();renderSettings();showToast('💣 All data wiped');});}
+
+// ═══════════════════════════════════════════
+// DATA EXPORT / IMPORT
+// ═══════════════════════════════════════════
+function exportData(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`sweetledger-backup-${todayKey()}.json`;a.click();
+  showToast('📤 Export ready!');
+}
+function importDataPrompt(){document.getElementById('import-file-input').click();}
+function importData(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{try{data=JSON.parse(e.target.result);migrateData();saveData();renderHome();renderSettings();showToast('✅ Data imported!');}catch(err){showToast('❌ Invalid file');}};
+  reader.readAsText(file); event.target.value='';
+}
+function exportCSV(){
+  const rows=[['Date','Time','Flavor','Type','Qty','Revenue','Profit','Discount','Cost']];
+  data.sales.forEach(s=>{
+    const f=getFlavorById(s.flavorId);
+    const d=new Date(s.ts);
+    const discStr=s.discount>0?(s.discType==='pct'?s.discount+'%':'₱'+s.discount):'0';
+    rows.push([d.toLocaleDateString('en-PH'),d.toLocaleTimeString('en-PH'),f?.name||'Unknown',s.type,s.qty,s.totalRevenue.toFixed(2),s.profit.toFixed(2),discStr,s.cost.toFixed(2)]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`sweetledger-sales-${todayKey()}.csv`;a.click();
+  showToast('📊 CSV exported!');
+}
+
+// ═══════════════════════════════════════════
+// COLOR WHEEL
+// ═══════════════════════════════════════════
+const canvas=document.getElementById('color-wheel-canvas');
+const ctx=canvas.getContext('2d');
+const pointer=document.getElementById('color-wheel-pointer');
+const brightnessSlider=document.getElementById('color-wheel-brightness');
+const indicator=document.getElementById('color-wheel-indicator');
+const textLabel=document.getElementById('color-wheel-text');
+const hiddenInput=document.getElementById('flavor-color-input');
+const AVAILABLE_TAGS=[{name:'pink',angleStart:-30,angleEnd:45,color:'#f4a8be'},{name:'peach',angleStart:45,angleEnd:105,color:'#f5c07a'},{name:'yellow',angleStart:105,angleEnd:165,color:'#f5e07a'},{name:'mint',angleStart:165,angleEnd:245,color:'#7ecfad'},{name:'lav',angleStart:245,angleEnd:330,color:'#b4a4ff'}];
+const TAG_COORDINATE_ANGLES={pink:10,peach:75,yellow:135,mint:205,lav:285};
+
+function drawColorWheel(){
+  const radius=canvas.width/2,cx=radius,cy=radius,brightness=parseInt(brightnessSlider.value)/100;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let y=0;y<canvas.height;y++){for(let x=0;x<canvas.width;x++){const dx=x-cx,dy=y-cy,dist=Math.sqrt(dx*dx+dy*dy);if(dist<=radius){let angle=Math.atan2(dy,dx)*(180/Math.PI);if(angle<0)angle+=360;let sat=Math.min(1,dist/radius)*100;let lgt=(100-(sat*.25))*brightness;ctx.fillStyle=`hsl(${angle},${sat}%,${lgt}%)`;ctx.fillRect(x,y,1,1);}}}
+}
+
+function updateColorWheelSelection(tagName){
+  const radius=canvas.width/2,angleDeg=TAG_COORDINATE_ANGLES[tagName]||0,angleRad=angleDeg*(Math.PI/180),rDistance=radius*.7;
+  pointer.style.left=`${radius+rDistance*Math.cos(angleRad)}px`;
+  pointer.style.top=`${radius+rDistance*Math.sin(angleRad)}px`;
+  hiddenInput.value=tagName; textLabel.textContent=tagName; indicator.style.backgroundColor=COLOR_MAP[tagName];
+}
+
+function handleWheelSelection(e){
+  const rect=canvas.getBoundingClientRect(),radius=canvas.width/2,x=e.clientX-rect.left,y=e.clientY-rect.top,dx=x-radius,dy=y-radius,dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist<=radius){
+    pointer.style.left=`${x}px`;pointer.style.top=`${y}px`;
+    let angle=Math.atan2(dy,dx)*(180/Math.PI);if(angle<0)angle+=360;
+    let matchedTag=AVAILABLE_TAGS.find(tag=>{let s=tag.angleStart<0?tag.angleStart+360:tag.angleStart,en=tag.angleEnd<0?tag.angleEnd+360:tag.angleEnd;return s>en?angle>=s||angle<=en:angle>=s&&angle<=en;})||AVAILABLE_TAGS[0];
+    hiddenInput.value=matchedTag.name;textLabel.textContent=matchedTag.name;indicator.style.backgroundColor=COLOR_MAP[matchedTag.name];
+  }
+}
+
+canvas.addEventListener('mousedown',handleWheelSelection);
+canvas.addEventListener('mousemove',e=>{if(e.buttons===1)handleWheelSelection(e);});
+canvas.addEventListener('touchstart',e=>{if(e.touches.length===1)handleWheelSelection(e.touches[0]);},{passive:true});
+canvas.addEventListener('touchmove',e=>{if(e.touches.length===1)handleWheelSelection(e.touches[0]);},{passive:true});
+brightnessSlider.addEventListener('input',()=>{drawColorWheel();updateColorWheelSelection(hiddenInput.value);});
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+loadData();
+renderHome();
+updateNotifBadge();
+drawColorWheel();
+_initPills();
+
+if('Notification' in window) document.getElementById('notif-status').textContent='Permission: '+Notification.permission;
+</script>
+</body>
+</html>
