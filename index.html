@@ -7,7 +7,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SweetLedger">
 <title>SweetLedger v3</title>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" as="style" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
 <style>
 /* ═══════════════════════════════════════════
    DESIGN TOKENS — Single source of truth
@@ -59,12 +62,13 @@
    RESET & BASE
 ═══════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden}
+html{height:100%;height:-webkit-fill-available}
+body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden}
 
 /* ═══════════════════════════════════════════
    APP SHELL
 ═══════════════════════════════════════════ */
-#app{width:100%;max-width:430px;height:100dvh;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--bg)}
+#app{width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--bg)}
 
 /* VIEWS */
 .view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;
@@ -73,7 +77,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist'
 .view.active{opacity:1;pointer-events:all;transform:translateY(0)}
 
 /* SCROLL AREA */
-.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
 .scroll-area::-webkit-scrollbar{display:none}
 
 /* ═══════════════════════════════════════════
@@ -170,7 +174,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist'
 /* ═══════════════════════════════════════════
    BOTTOM NAVIGATION
 ═══════════════════════════════════════════ */
-.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:rgba(13,13,16,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);padding:10px 0 0;display:flex;justify-content:space-around;z-index:100;flex-shrink:0;padding-bottom:max(env(safe-area-inset-bottom,0px),20px)}
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:rgba(13,13,16,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);padding:10px 0 env(safe-area-inset-bottom,0px);display:flex;justify-content:space-around;z-index:100;flex-shrink:0}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 18px 4px;transition:transform .1s;position:relative}
 .nav-item:active{transform:scale(.88)}
 .nav-icon{font-size:22px;opacity:.32;transition:opacity .18s,transform .2s cubic-bezier(.34,1.56,.64,1)}
@@ -273,9 +277,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist'
 /* ═══════════════════════════════════════════
    ACTIVITY LOG
 ═══════════════════════════════════════════ */
-.log-date-header{padding:10px 20px 4px;font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.12em}
-.log-entry{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);margin:0 20px 7px;padding:14px 15px;display:flex;align-items:center;gap:13px;transition:background .14s}
-.log-icon-wrap{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.log-date-header{padding:10px 20px 4px;font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.12em;transition:opacity .28s ease,transform .28s ease}
+/* ═══════════════════════════════════════════
+   LOG SCROLL-REVEAL
+═══════════════════════════════════════════ */
+.log-entry{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);margin:0 20px 7px;padding:14px 15px;display:flex;align-items:center;gap:13px;transition:background .14s,opacity .32s cubic-bezier(.25,.46,.45,.94),transform .32s cubic-bezier(.25,.46,.45,.94)}
+.log-entry.scroll-hidden{opacity:0;transform:translateY(14px)}
+.log-date-header.scroll-hidden{opacity:0;transform:translateY(8px);transition:opacity .28s ease,transform .28s ease}
 .log-icon-wrap.sale{background:rgba(82,214,138,.12)}
 .log-icon-wrap.stock{background:rgba(180,164,255,.12)}
 .log-icon-wrap.adjust{background:rgba(245,192,122,.12)}
@@ -398,14 +406,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist'
 .analytics-section-title{font-size:10px;color:var(--text3);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;margin-top:4px}
 .pie-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:12px}
 .pie-canvas-row{display:flex;align-items:center;gap:14px}
-#pie-canvas{flex-shrink:0;animation:fadeIn .32s ease both}
+#pie-canvas{flex-shrink:0}
 .pie-legend{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
 .pie-legend-item{display:flex;align-items:center;gap:7px}
 .pie-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .pie-legend-name{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .pie-legend-pct{font-size:11px;font-family:'Geist Mono',monospace;color:var(--text2);flex-shrink:0}
 .leaderboard{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:12px}
-.lb-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.lb-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);transition:opacity .28s cubic-bezier(.25,.46,.45,.94),transform .28s cubic-bezier(.25,.46,.45,.94)}
+.lb-row.scroll-hidden{opacity:0;transform:translateY(10px)}
 .lb-row:last-child{border-bottom:none}
 .lb-rank{font-size:12px;font-weight:800;font-family:'Geist Mono',monospace;color:var(--text3);width:22px;flex-shrink:0;text-align:center}
 .lb-emoji{font-size:18px;flex-shrink:0}
@@ -417,7 +426,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist'
 /* Revenue chart */
 .rev-chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:12px}
 .rev-chart-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px}
-#rev-chart-canvas{width:100%;display:block;animation:fadeIn .32s ease both}
+#rev-chart-canvas{width:100%;height:100px;display:block}
 
 /* ═══════════════════════════════════════════
    GOAL / STREAK
@@ -996,16 +1005,20 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Geist'
 </div>
 
 <script>
+'use strict';
 // ═══════════════════════════════════════════
 // DATA LAYER
 // ═══════════════════════════════════════════
 const DB_KEY = 'sweetledger_v3';
+const SCHEMA_VERSION = 4;
 let data = null;
 
 function defaultData() {
   return {
+    version: SCHEMA_VERSION,
     settings:{ shopName:'My Candy Shop', baseCost:100, sellPrice:300, piecesPerBox:30, notifEnabled:false, lowStockThreshold:30, dailyGoal:0 },
-    flavors:[], sales:[], stockIns:[], adjustments:[], notifLog:[], expenses:[]
+    flavors:[], sales:[], stockIns:[], adjustments:[], notifLog:[], expenses:[],
+    meta:{ lastExport: null }
   };
 }
 
@@ -1021,48 +1034,114 @@ function migrateData() {
   if (!data.notifLog)    data.notifLog = [];
   if (!data.adjustments) data.adjustments = [];
   if (!data.expenses)    data.expenses = [];
+  if (!data.meta)        data.meta = { lastExport: null };
   if (!data.settings.piecesPerBox)      data.settings.piecesPerBox = 30;
   if (!data.settings.lowStockThreshold) data.settings.lowStockThreshold = 30;
   if (!data.settings.dailyGoal)         data.settings.dailyGoal = 0;
-  data.flavors.forEach(f => { if (!f.notes) f.notes = ''; });
+  data.flavors.forEach(f => {
+    if (!f.notes) f.notes = '';
+    // Migrate old tag-name colors to hex
+    if (f.color && !f.color.startsWith('#')) {
+      f.color = LEGACY_COLOR_MAP[f.color] || '#b4a4ff';
+    }
+  });
   // Migrate sales without discount field
-  data.sales.forEach(s => { if (s.discount === undefined) s.discount = 0; if (s.discType === undefined) s.discType = 'pct'; });
+  data.sales.forEach(s => {
+    if (s.discount === undefined) s.discount = 0;
+    if (s.discType === undefined) s.discType = 'pct';
+    if (s.deleted === undefined) s.deleted = false;
+  });
+  data.version = SCHEMA_VERSION;
+}
+
+// ── State manager ──────────────────────────
+function setState(patch) {
+  Object.assign(data, patch);
+  saveData();
 }
 
 let _saveTimer;
-function saveData(){clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>localStorage.setItem(DB_KEY,JSON.stringify(data)),120);}
+function saveData() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify(data));
+      _checkBackupNudge();
+    } catch(e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        showToast('⚠️ Storage full! Please export your data.');
+      }
+    }
+  }, 120);
+}
+
+// ── Invalidate stock cache on writes ───────
+let _stockCache = {};
+function invalidateStockCache(flavorId) {
+  if (flavorId) delete _stockCache[flavorId];
+  else _stockCache = {};
+}
+
+function _checkBackupNudge() {
+  if (!data.meta) return;
+  const last = data.meta.lastExport;
+  if (!last) return;
+  const daysSince = (Date.now() - new Date(last).getTime()) / 86400000;
+  if (daysSince >= 7) showToast('💾 Back up your data! Last export was ' + Math.floor(daysSince) + ' days ago.');
+}
 
 // ═══════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════
-function todayKey() { return new Date().toISOString().slice(0,10); }
+
+// Manila timezone key — fixes UTC vs local bug
+function todayKey() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
+}
+function manilaDateStr(ts) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date(ts));
+}
+
 function fmtPHP(n) { return '₱' + Number(n).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPHPShort(n) { if (Math.abs(n)>=1000) return '₱'+(n/1000).toFixed(1)+'k'; return '₱'+Math.round(n); }
-function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}); }
-function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Manila'}); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric',timeZone:'Asia/Manila'}); }
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
-const COLOR_MAP = { pink:'#f4a8be', mint:'#7ecfad', lav:'#b4a4ff', peach:'#f5c07a', yellow:'#f5e07a' };
+// ── Color helpers ──────────────────────────
+const LEGACY_COLOR_MAP = { pink:'#f4a8be', mint:'#7ecfad', lav:'#b4a4ff', peach:'#f5c07a', yellow:'#f5e07a' };
+// Keep BG_MAP for any legacy fallback paths; new code uses hexToRgba
 const BG_MAP   = { pink:'rgba(244,168,190,.14)', mint:'rgba(126,207,173,.14)', lav:'rgba(180,164,255,.14)', peach:'rgba(245,192,122,.14)', yellow:'rgba(245,224,122,.14)' };
 const PIE_COLORS = ['#f4a8be','#7ecfad','#b4a4ff','#f5c07a','#f5e07a','#ff8fab','#52d68a','#9b87f5','#f7b84b','#69db7c'];
 const EXP_ICONS = { transport:'🚗', packaging:'📦', supplies:'🛒', utilities:'💡', other:'💸' };
 
+function hexToRgba(hex, alpha) {
+  if (!hex || !hex.startsWith('#')) hex = LEGACY_COLOR_MAP[hex] || '#b4a4ff';
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function flavorBg(f)   { return hexToRgba(f.color||'#b4a4ff', 0.15); }
+function flavorTint(f) { return hexToRgba(f.color||'#b4a4ff', 0.10); }
+
 function getFlavorById(id) { return data.flavors.find(f=>f.id===id); }
-function getTodaySales()    { return data.sales.filter(s=>s.ts.slice(0,10)===todayKey()); }
-function getTodayExpenses() { return data.expenses.filter(e=>e.ts.slice(0,10)===todayKey()); }
+function getTodaySales()    { const tk=todayKey(); return data.sales.filter(s=>!s.deleted && manilaDateStr(s.ts)===tk); }
+function getTodayExpenses() { const tk=todayKey(); return data.expenses.filter(e=>manilaDateStr(e.ts)===tk); }
 
 function getFlavorStock(flavorId) {
+  if (_stockCache[flavorId] !== undefined) return _stockCache[flavorId];
   const f = getFlavorById(flavorId); if (!f) return 0;
   const inPieces = data.stockIns.filter(s=>s.flavorId===flavorId).reduce((a,s)=>a+s.pieces,0) + (f.initialStock||0);
   const ppb = f.piecesPerBox || data.settings.piecesPerBox;
-  const soldPieces = data.sales.filter(s=>s.flavorId===flavorId).reduce((a,s)=> a+(s.type==='box'?s.qty*ppb:s.qty), 0);
+  const soldPieces = data.sales.filter(s=>s.flavorId===flavorId && !s.deleted).reduce((a,s)=> a+(s.type==='box'?s.qty*ppb:s.qty), 0);
   const adj = data.adjustments.filter(a=>a.flavorId===flavorId).reduce((a,d)=>a+d.delta,0);
-  return Math.max(0, inPieces - soldPieces + adj);
+  const result = Math.max(0, inPieces - soldPieces + adj);
+  _stockCache[flavorId] = result;
+  return result;
 }
 
 function getDateData(dateKey) {
-  const sales = data.sales.filter(s=>s.ts.slice(0,10)===dateKey);
-  const expenses = data.expenses.filter(e=>e.ts.slice(0,10)===dateKey).reduce((a,e)=>a+e.amount,0);
+  const sales = data.sales.filter(s=>!s.deleted && manilaDateStr(s.ts)===dateKey);
+  const expenses = data.expenses.filter(e=>manilaDateStr(e.ts)===dateKey).reduce((a,e)=>a+e.amount,0);
   const revenue = sales.reduce((a,s)=>a+s.totalRevenue,0);
   const profit  = sales.reduce((a,s)=>a+s.profit,0);
   const boxes   = sales.filter(s=>s.type==='box').reduce((a,s)=>a+s.qty,0);
@@ -1078,9 +1157,12 @@ function getDateData(dateKey) {
 // STREAK & TODAY HELPERS
 // ═══════════════════════════════════════════
 function calcStreak() {
-  const keys=new Set(data.sales.map(s=>s.ts.slice(0,10)));
-  let streak=0,d=new Date();
-  while(true){const k=d.toISOString().slice(0,10);if(keys.has(k)){streak++;d.setDate(d.getDate()-1);}else break;}
+  const keys = new Set(data.sales.filter(s=>!s.deleted).map(s=>manilaDateStr(s.ts)));
+  let streak=0, d=new Date();
+  while(true){
+    const k = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila'}).format(d);
+    if(keys.has(k)){streak++;d.setDate(d.getDate()-1);}else break;
+  }
   return streak;
 }
 function sumBy(arr,fn){return arr.reduce((a,x)=>a+fn(x),0);}
@@ -1223,7 +1305,7 @@ function renderHome() {
     const tdProfit=tdSales.reduce((a,s)=>a+s.profit,0);
     const isLow=stock<threshold;
     return `<div class="flavor-card" onclick="openFlavorDetail('${f.id}')">
-      <div class="flavor-avatar" style="background:${BG_MAP[f.color]||BG_MAP.pink}">${f.emoji||'🍬'}</div>
+      <div class="flavor-avatar" style="background:${flavorBg(f)}">${f.emoji||'🍬'}</div>
       <div class="flavor-info">
         <div class="flavor-name">${f.name}${isLow?` <span style="font-size:9px;color:var(--red);font-family:'Geist Mono',monospace;border:1px solid rgba(240,90,90,.3);border-radius:4px;padding:1px 4px">LOW</span>`:''}</div>
         <div class="flavor-sub">${stock} pcs · ${fmtPHP(f.sellPrice||data.settings.sellPrice)}/box</div>
@@ -1346,20 +1428,42 @@ function confirmSale() {
   const ppb=f.piecesPerBox||data.settings.piecesPerBox;
   const piecesNeeded=posState.saleType==='box'?qty*ppb:qty;
   if(piecesNeeded>stock){showToast(`❌ Not enough stock! (${stock} pcs left)`);return;}
-  let baseRevenue, cost;
-  if(posState.saleType==='box'){baseRevenue=qty*(f.sellPrice||data.settings.sellPrice);cost=qty*(f.baseCost||data.settings.baseCost);}
-  else{baseRevenue=qty*(f.sellPrice||data.settings.sellPrice)/ppb;cost=qty*(f.baseCost||data.settings.baseCost)/ppb;}
-  const revenue=_calcDiscountedRevenue(baseRevenue);
-  const profit=revenue-cost;
+
+  // ── Cost basis — always per-box, prorated for pieces ──
+  const baseCostPerBox = f.baseCost||data.settings.baseCost;
+  const costPerBox = baseCostPerBox; // sale cost uses flavor's stored per-box cost
+  let totalCost;
+  if(posState.saleType==='box') totalCost = qty * costPerBox;
+  else totalCost = qty * (costPerBox / ppb);
+
+  // ── Revenue ──
+  let baseRevenue;
+  if(posState.saleType==='box') baseRevenue = qty*(f.sellPrice||data.settings.sellPrice);
+  else baseRevenue = qty*(f.sellPrice||data.settings.sellPrice)/ppb;
+  const revenue = _calcDiscountedRevenue(baseRevenue);
+  const profit = revenue - totalCost;
+
   const discVal=posState.discountEnabled?(parseFloat(document.getElementById('disc-input').value)||0):0;
-  const sale={id:uid(),flavorId:f.id,type:posState.saleType,qty,totalRevenue:revenue,profit,cost,discount:discVal,discType:posState.discType,ts:new Date().toISOString()};
-  data.sales.push(sale); saveData();
+  const sale={id:uid(),flavorId:f.id,type:posState.saleType,qty,totalRevenue:revenue,profit,cost:totalCost,discount:discVal,discType:posState.discType,ts:new Date().toISOString(),deleted:false};
+  data.sales.push(sale);
+  invalidateStockCache(f.id);
+  saveData();
+
+  haptic('medium');
+
+  // ── Undo toast ──
+  const saleId = sale.id;
+  const undoFn = () => {
+    const s = data.sales.find(x=>x.id===saleId);
+    if(s){ s.deleted=true; invalidateStockCache(s.flavorId); saveData(); renderHome(); renderLog(); }
+  };
   const discStr=discVal>0?(posState.discType==='pct'?` (${discVal}% off)`:` (₱${discVal} off)`):'';
   const msg=`Sold ${qty} ${posState.saleType}(s) of ${f.name} — ${fmtPHP(revenue)}${discStr}`;
   addNotif(msg); sendPushNotif('SweetLedger Sale 🍬',msg);
-  showToast(`✅ Sale recorded! ${fmtPHP(revenue)}`);
+  showToastWithUndo(`✅ ${fmtPHP(revenue)} recorded`, undoFn);
   posState.qty=''; posState.flavorId=null;
   renderPos(); renderHome();
+  checkLowStockNotifs();
 }
 
 // ═══════════════════════════════════════════
@@ -1384,7 +1488,7 @@ function renderInventory() {
     return `<div class="inv-card">
       <div class="inv-card-top">
         <div class="inv-card-name">
-          <div class="inv-card-emoji" style="background:${BG_MAP[f.color]||BG_MAP.pink};width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center">${f.emoji||'🍬'}</div>
+          <div class="inv-card-emoji" style="background:${flavorBg(f)};width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center">${f.emoji||'🍬'}</div>
           <div class="inv-card-label">${f.name}<small>₱${f.baseCost||data.settings.baseCost} cost · ₱${f.sellPrice||data.settings.sellPrice} sell · ${marginPct}% margin</small></div>
         </div>
         <div class="inv-actions">
@@ -1439,7 +1543,7 @@ function renderLog() {
   if(logTab==='expenses'){renderExpenses();return;}
   const list=document.getElementById('log-list');
   const events=[
-    ...data.sales.map(s=>({ts:s.ts,type:'sale',data:s})),
+    ...data.sales.filter(s=>!s.deleted).map(s=>({ts:s.ts,type:'sale',data:s})),
     ...data.stockIns.map(s=>({ts:s.ts,type:'stock',data:s})),
     ...data.adjustments.map(a=>({ts:a.ts,type:'adjust',data:a})),
     ...data.expenses.map(e=>({ts:e.ts,type:'expense',data:e}))
@@ -1447,15 +1551,18 @@ function renderLog() {
   if(!events.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No activity yet.</div></div>';return;}
   let html='',lastDate='';
   events.forEach(e=>{
-    const d=e.ts.slice(0,10);
+    const d=manilaDateStr(e.ts);
     if(d!==lastDate){html+=`<div class="log-date-header">${d===todayKey()?'Today':fmtDate(e.ts)}</div>`;lastDate=d;}
     if(e.type==='sale'){
       const f=getFlavorById(e.data.flavorId);
       const discStr=e.data.discount>0?(e.data.discType==='pct'?` <span style="color:var(--yellow);font-size:10px;font-family:'Geist Mono',monospace">-${e.data.discount}%</span>`:` <span style="color:var(--yellow);font-size:10px;font-family:'Geist Mono',monospace">-₱${e.data.discount}</span>`):'';
-      html+=`<div class="log-entry"><div class="log-icon-wrap sale">🛒</div><div class="log-info"><div class="log-desc">${f?.emoji||'🍬'} ${f?.name||'Unknown'} · ${e.data.qty} ${e.data.type}(s)${discStr}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount pos">+${fmtPHP(e.data.totalRevenue)}</div></div>`;
+      const costStr=`<span style="font-size:9px;color:var(--text3);font-family:'Geist Mono',monospace;margin-left:4px">cost ${fmtPHP(e.data.cost||0)}</span>`;
+      html+=`<div class="log-entry" data-sale-id="${e.data.id}"><div class="log-icon-wrap sale">🛒</div><div class="log-info"><div class="log-desc">${f?.emoji||'🍬'} ${f?.name||'Unknown'} · ${e.data.qty} ${e.data.type}(s)${discStr}${costStr}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount pos">+${fmtPHP(e.data.totalRevenue)}</div><div onclick="softDeleteSale('${e.data.id}')" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;cursor:pointer;flex-shrink:0;border-radius:7px;background:rgba(240,90,90,.08)" title="Delete">✕</div></div>`;
     } else if(e.type==='stock'){
       const f=getFlavorById(e.data.flavorId);
-      html+=`<div class="log-entry"><div class="log-icon-wrap stock">📦</div><div class="log-info"><div class="log-desc">${f?.name||'Unknown'} · Stock In +${e.data.pieces} pcs</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount neutral">${fmtPHP(e.data.costPaid)}</div></div>`;
+      const cPerBox=e.data.costPerBox;
+      const cStr=cPerBox?`₱${cPerBox}/box`:'auto';
+      html+=`<div class="log-entry"><div class="log-icon-wrap stock">📦</div><div class="log-info"><div class="log-desc">${f?.name||'Unknown'} · Stock In +${e.data.pieces} pcs <span style="font-size:9px;color:var(--text3);font-family:'Geist Mono',monospace">${cStr}</span></div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount neutral">${fmtPHP(e.data.costPaid)}</div></div>`;
     } else if(e.type==='expense'){
       html+=`<div class="log-entry"><div class="log-icon-wrap expense">${EXP_ICONS[e.data.category]||'💸'}</div><div class="log-info"><div class="log-desc">${e.data.name}</div><div class="log-time">${fmtTime(e.data.ts)}</div></div><div class="log-amount neg">-${fmtPHP(e.data.amount)}</div></div>`;
     } else {
@@ -1464,6 +1571,29 @@ function renderLog() {
     }
   });
   list.innerHTML=html;
+  _initLogScrollReveal();
+}
+
+function _initLogScrollReveal() {
+  const scrollRoot = document.querySelector('#view-log .scroll-area');
+  if (!scrollRoot || !('IntersectionObserver' in window)) return;
+  const items = scrollRoot.querySelectorAll('.log-entry, .log-date-header');
+  if (!items.length) return;
+  // Mark all as hidden first
+  items.forEach(el => el.classList.add('scroll-hidden'));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Slight stagger based on position in the list
+        const delay = Array.from(items).indexOf(entry.target) * 18;
+        setTimeout(() => {
+          entry.target.classList.remove('scroll-hidden');
+        }, Math.min(delay, 220));
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { root: scrollRoot, threshold: 0.05 });
+  items.forEach(el => obs.observe(el));
 }
 
 function renderExpenses() {
@@ -1492,7 +1622,7 @@ function renderExpenses() {
 const PIE_COLOR_KEYS=['pink','mint','lav','peach','yellow'];
 
 function getFlavorUnits(flavorId) {
-  return data.sales.filter(s=>s.flavorId===flavorId).reduce((a,s)=>{
+  return data.sales.filter(s=>s.flavorId===flavorId && !s.deleted).reduce((a,s)=>{
     const f=getFlavorById(flavorId); if(!f) return a;
     return a+(s.type==='box'?s.qty*(f.piecesPerBox||data.settings.piecesPerBox):s.qty);
   },0);
@@ -1501,8 +1631,7 @@ function getFlavorUnits(flavorId) {
 function buildFlavorRanking() {
   const rows=data.flavors.map((f,i)=>({
     flavor:f, units:getFlavorUnits(f.id),
-    colorKey:f.color||PIE_COLOR_KEYS[i%PIE_COLOR_KEYS.length],
-    color:COLOR_MAP[f.color]||PIE_COLORS[i%PIE_COLORS.length]
+    color:f.color||(PIE_COLORS[i%PIE_COLORS.length])
   })).filter(r=>r.units>0).sort((a,b)=>b.units-a.units);
   const total=rows.reduce((a,r)=>a+r.units,0);
   rows.forEach(r=>{r.pct=total>0?(r.units/total*100):0;});
@@ -1512,7 +1641,7 @@ function buildFlavorRanking() {
 function renderAnalytics() {
   const container=document.getElementById('analytics-content');
   if(!data.sales.length){container.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">No sales data yet.</div></div>';return;}
-  const allSales=data.sales;
+  const allSales=data.sales.filter(s=>!s.deleted);
   const ltRevenue=sumBy(allSales,s=>s.totalRevenue);
   const ltProfit=sumBy(allSales,s=>s.profit);
   const ltBoxes=sumBy(allSales.filter(s=>s.type==='box'),s=>s.qty);
@@ -1543,12 +1672,11 @@ function renderAnalytics() {
 
   if(rows.length>0){
     html+=`<div class="analytics-section-title">Flavor Distribution</div>
-    <div class="pie-wrap"><div class="pie-canvas-row"><canvas id="pie-canvas" width="140" height="140"></canvas><div class="pie-legend" id="pie-legend"></div></div></div>`;
+    <div class="pie-wrap"><div class="pie-canvas-row"><canvas id="pie-canvas" style="flex-shrink:0"></canvas><div class="pie-legend" id="pie-legend"></div></div></div>`;
     html+=`<div class="analytics-section-title">Flavor Leaderboard</div><div class="leaderboard">`;
     rows.forEach((r,i)=>{
       const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
-      const delay=(i*.04).toFixed(2);
-      html+=`<div class="lb-row" style="animation:fadeUp .22s ${delay}s cubic-bezier(.25,.46,.45,.94) both">
+      html+=`<div class="lb-row scroll-hidden" data-lb-idx="${i}">
         <div class="lb-rank">${medal}</div><div class="lb-emoji">${r.flavor.emoji||'🍬'}</div>
         <div class="lb-info"><div class="lb-name">${r.flavor.name}</div><div class="lb-bar-wrap"><div class="lb-bar-fill" style="width:${r.pct.toFixed(1)}%;background:${r.color}"></div></div></div>
         <div class="lb-pct">${r.pct.toFixed(1)}%</div>
@@ -1558,7 +1686,55 @@ function renderAnalytics() {
   }
 
   container.innerHTML=html;
-  requestAnimationFrame(()=>{_drawRevChart();if(rows.length>0)_drawPie(rows,total);});
+  _initAnalyticsScrollAnims(rows, total);
+}
+
+function _initAnalyticsScrollAnims(rows, total) {
+  const scrollRoot = document.querySelector('#view-log .scroll-area');
+  if (!scrollRoot) return;
+
+  const makeObs = (threshold, cb) => {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => { if (entry.isIntersecting) { obs.disconnect(); cb(); } });
+    }, { root: scrollRoot, threshold });
+    return obs;
+  };
+
+  // ── Bar chart ──────────────────────────────
+  const revWrap = document.querySelector('.rev-chart-wrap');
+  if (revWrap) makeObs(0.85, () => _drawRevChart()).observe(revWrap);
+
+  // ── Pie chart + legend ─────────────────────
+  if (rows.length > 0) {
+    const pieWrap = document.querySelector('.pie-wrap');
+    if (pieWrap) {
+      makeObs(0.75, () => {
+        _drawPie(rows, total);
+        const legendItems = document.querySelectorAll('#pie-legend .pie-legend-item');
+        legendItems.forEach((el, i) => {
+          el.style.cssText += `opacity:0;transform:translateY(6px);transition:opacity .22s ${(i*.06).toFixed(2)}s ease,transform .22s ${(i*.06).toFixed(2)}s ease`;
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            el.style.opacity = '1'; el.style.transform = 'translateY(0)';
+          }));
+        });
+      }).observe(pieWrap);
+    }
+
+    // ── Leaderboard rows ───────────────────────
+    const lbRows = document.querySelectorAll('.lb-row.scroll-hidden');
+    if (lbRows.length) {
+      const lbObs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const idx = parseInt(entry.target.dataset.lbIdx || '0');
+            setTimeout(() => entry.target.classList.remove('scroll-hidden'), idx * 45);
+            lbObs.unobserve(entry.target);
+          }
+        });
+      }, { root: scrollRoot, threshold: 0.5 });
+      lbRows.forEach(row => lbObs.observe(row));
+    }
+  }
 }
 
 function _calcAvgDailyRevenue() {
@@ -1567,54 +1743,211 @@ function _calcAvgDailyRevenue() {
   return sumBy(data.sales,s=>s.totalRevenue)/days.size;
 }
 
+let _revChartAnim = null;
+
 function _drawRevChart() {
-  const canvas=document.getElementById('rev-chart-canvas'); if(!canvas) return;
-  const days=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
-  const vals=days.map(d=>getDateData(d).revenue);
-  const maxVal=Math.max(...vals,1);
-  const W=canvas.offsetWidth||300,H=80;
-  canvas.width=W; canvas.height=H;
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-  const barW=Math.floor((W-40)/7)-4;
-  vals.forEach((v,i)=>{
-    const x=20+i*((W-40)/7);
-    const barH=Math.max(2,(v/maxVal)*(H-24));
-    const y=H-12-barH;
-    const grad=ctx.createLinearGradient(0,y,0,H-12);
-    grad.addColorStop(0,'#9b87f5'); grad.addColorStop(1,'rgba(155,135,245,.28)');
-    ctx.fillStyle=grad;
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(x,y,barW,barH,3); else ctx.rect(x,y,barW,barH);
-    ctx.fill();
-    ctx.fillStyle='#55536a'; ctx.font='9px Geist Mono,monospace'; ctx.textAlign='center';
-    const day=new Date(days[i]+'T00:00:00').toLocaleDateString('en-PH',{weekday:'short'}).slice(0,1);
-    ctx.fillText(day,x+barW/2,H-1);
-    if(v>0){ctx.fillStyle='#8e8c9e';ctx.fillText('₱'+(v>=1000?(v/1000).toFixed(1)+'k':Math.round(v)),x+barW/2,y-3);}
-  });
+  const canvas = document.getElementById('rev-chart-canvas'); if (!canvas) return;
+  if (_revChartAnim) { cancelAnimationFrame(_revChartAnim); _revChartAnim = null; }
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(d));
+  }
+  const todayStr = todayKey();
+  const vals = days.map(d => getDateData(d).revenue);
+  const profits = days.map(d => getDateData(d).profit);
+  const maxVal = Math.max(...vals, 1);
+
+  const W = canvas.offsetWidth || 300, H = 100;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  const PADDING = 24, BAR_AREA = W - PADDING * 2;
+  const slotW = BAR_AREA / 7;
+  const barW = Math.max(8, slotW * 0.55);
+  const BASELINE = H - 16, TOP_PAD = 18;
+
+  const startTime = performance.now();
+  const DURATION = 520; // ms
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function frame(now) {
+    const raw = (now - startTime) / DURATION;
+    const progress = Math.min(1, raw);
+    const ease = easeOutCubic(progress);
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Baseline rule
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PADDING, BASELINE); ctx.lineTo(W - PADDING, BASELINE); ctx.stroke();
+
+    vals.forEach((v, i) => {
+      const isToday = days[i] === todayStr;
+      const isProfit = profits[i] >= 0;
+      const fullBarH = Math.max(2, (v / maxVal) * (BASELINE - TOP_PAD));
+      const animBarH = fullBarH * ease;
+      const x = PADDING + i * slotW + (slotW - barW) / 2;
+      const y = BASELINE - animBarH;
+
+      // Bar gradient
+      const grad = ctx.createLinearGradient(0, y, 0, BASELINE);
+      if (isToday) {
+        grad.addColorStop(0, '#b4a4ff');
+        grad.addColorStop(1, 'rgba(180,164,255,0.18)');
+      } else {
+        grad.addColorStop(0, '#9b87f5');
+        grad.addColorStop(1, 'rgba(155,135,245,0.14)');
+      }
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, barW, animBarH, [3, 3, 0, 0]);
+      else ctx.rect(x, y, barW, animBarH);
+      ctx.fill();
+
+      // Today glow ring
+      if (isToday && animBarH > 2) {
+        ctx.strokeStyle = 'rgba(180,164,255,0.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x - 1, y - 1, barW + 2, animBarH + 1, [4, 4, 0, 0]);
+        else ctx.rect(x - 1, y - 1, barW + 2, animBarH + 1);
+        ctx.stroke();
+      }
+
+      // Day label
+      ctx.fillStyle = isToday ? '#b4a4ff' : '#55536a';
+      ctx.font = `${isToday ? '600' : '400'} 9px Geist Mono,monospace`;
+      ctx.textAlign = 'center';
+      const day = new Date(days[i] + 'T12:00:00').toLocaleDateString('en-PH', { weekday: 'short' }).slice(0, 1);
+      ctx.fillText(day, x + barW / 2, H - 2);
+
+      // Value label — fade in after bars reach ~70%
+      if (v > 0 && progress > 0.55) {
+        const labelAlpha = Math.min(1, (progress - 0.55) / 0.35);
+        ctx.fillStyle = `rgba(${isToday ? '180,164,255' : '142,140,158'},${labelAlpha})`;
+        ctx.font = `600 9px Geist Mono,monospace`;
+        const label = v >= 1000 ? '₱' + (v / 1000).toFixed(1) + 'k' : '₱' + Math.round(v);
+        ctx.fillText(label, x + barW / 2, y - 4);
+      }
+    });
+
+    if (progress < 1) _revChartAnim = requestAnimationFrame(frame);
+  }
+
+  _revChartAnim = requestAnimationFrame(frame);
 }
 
-function _drawPie(rows,total) {
-  const canvas=document.getElementById('pie-canvas'); if(!canvas) return;
-  const ctx=canvas.getContext('2d');
-  const cx=70,cy=70,r=62,hole=34;
-  ctx.clearRect(0,0,140,140);
-  let startAngle=-Math.PI/2;
-  rows.forEach((row,i)=>{
-    const slice=(row.units/total)*2*Math.PI;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,startAngle,startAngle+slice); ctx.closePath();
-    ctx.fillStyle=row.color; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r+1,startAngle+slice-.005,startAngle+slice+.005); ctx.closePath();
-    ctx.fillStyle='#0d0d10'; ctx.fill();
-    startAngle+=slice;
-  });
-  ctx.beginPath(); ctx.arc(cx,cy,hole,0,2*Math.PI); ctx.fillStyle='#0d0d10'; ctx.fill();
-  ctx.fillStyle='#eeedf4'; ctx.font='bold 18px Geist,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(total,cx,cy-7);
-  ctx.fillStyle='#55536a'; ctx.font='10px Geist Mono,monospace'; ctx.fillText('units',cx,cy+9);
-  const legend=document.getElementById('pie-legend');
-  if(legend) legend.innerHTML=rows.map(row=>`<div class="pie-legend-item"><div class="pie-legend-dot" style="background:${row.color}"></div><div class="pie-legend-name">${row.flavor.emoji||''} ${row.flavor.name}</div><div class="pie-legend-pct">${row.pct.toFixed(1)}%</div></div>`).join('');
+let _pieAnim = null;
+
+function _drawPie(rows, total) {
+  const canvas = document.getElementById('pie-canvas'); if (!canvas) return;
+  if (_pieAnim) { cancelAnimationFrame(_pieAnim); _pieAnim = null; }
+
+  const SIZE = 160;
+  canvas.width = SIZE * devicePixelRatio; canvas.height = SIZE * devicePixelRatio;
+  canvas.style.width = SIZE + 'px'; canvas.style.height = SIZE + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  const cx = SIZE / 2, cy = SIZE / 2;
+  const outerR = 68, innerR = 40, gapAngle = 0.018;
+  const BG = '#0d0d10';
+
+  const startTime = performance.now();
+  const DURATION = 1100;
+
+  function easeInOutQuart(t) {
+    return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+  }
+
+  function frame(now) {
+    const progress = Math.min(1, (now - startTime) / DURATION);
+    const ease = easeInOutQuart(progress);
+
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+    // Draw track ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = outerR - innerR;
+    ctx.stroke();
+
+    // Draw segments
+    let angle = -Math.PI / 2;
+    const sweepTotal = Math.PI * 2 * ease;
+
+    rows.forEach(row => {
+      const sliceFull = (row.units / total) * Math.PI * 2;
+      const slice = sliceFull * ease;
+      if (slice <= 0) return;
+
+      const midAngle = angle + slice / 2;
+
+      // Glow shadow
+      ctx.save();
+      ctx.shadowColor = row.color;
+      ctx.shadowBlur = 10 * ease;
+
+      // Segment arc
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, outerR, angle + gapAngle, angle + slice - gapAngle);
+      ctx.closePath();
+      ctx.fillStyle = row.color;
+      ctx.fill();
+      ctx.restore();
+
+      // Punch gap separator
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, outerR + 1, angle + slice - gapAngle / 2, angle + slice + gapAngle / 2);
+      ctx.closePath();
+      ctx.fillStyle = BG;
+      ctx.fill();
+
+      angle += slice;
+    });
+
+    // Inner hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+    ctx.fillStyle = BG;
+    ctx.fill();
+
+    // Animated counter — count up
+    const displayTotal = Math.round(total * ease);
+    ctx.fillStyle = '#eeedf4';
+    ctx.font = `bold ${SIZE <= 140 ? 16 : 20}px Geist,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(displayTotal, cx, cy - 8);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '10px Geist Mono,monospace';
+    ctx.fillText('units', cx, cy + 10);
+
+    if (progress < 1) _pieAnim = requestAnimationFrame(frame);
+  }
+
+  _pieAnim = requestAnimationFrame(frame);
+
+  // Legend
+  const legend = document.getElementById('pie-legend');
+  if (legend) {
+    legend.innerHTML = rows.map((row, i) => `
+      <div class="pie-legend-item" style="animation:fadeUp .2s ${(i * 0.06).toFixed(2)}s cubic-bezier(.25,.46,.45,.94) both">
+        <div class="pie-legend-dot" style="background:${row.color};box-shadow:0 0 6px ${row.color}55"></div>
+        <div class="pie-legend-name">${row.flavor.emoji || ''} ${row.flavor.name}</div>
+        <div class="pie-legend-pct">${row.pct.toFixed(1)}%</div>
+      </div>`).join('');
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1786,7 +2119,9 @@ function confirmAdjust() {
   const currentStock=getFlavorStock(flavorId);
   if(currentStock+delta<0){showToast('❌ Would result in negative stock');return;}
   data.adjustments.push({id:uid(),flavorId,delta,reason,ts:new Date().toISOString()});
+  invalidateStockCache(flavorId);
   saveData(); closeModal('modal-adjust'); renderInventory(); renderHome();
+  haptic('medium');
   showToast(`⚖️ Adjusted by ${delta>0?'+':''}${delta} pcs`);
 }
 
@@ -1810,8 +2145,15 @@ function calcStockIn() {
   const extra=parseInt(document.getElementById('stock-in-extra').value)||0;
   const ppb=f.piecesPerBox||data.settings.piecesPerBox;
   const totalPcs=boxes*ppb+extra;
-  const autoCost=boxes*(f.baseCost||data.settings.baseCost);
-  document.getElementById('stock-in-summary').textContent=totalPcs>0?`${totalPcs} pieces total · auto-cost ${fmtPHP(autoCost)}`:'';
+  const costPerBoxAuto=f.baseCost||data.settings.baseCost;
+  const autoCost=boxes*costPerBoxAuto;
+  const overrideRaw=parseFloat(document.getElementById('stock-in-cost').value);
+  // Override is PER BOX — multiply by boxes for total
+  const hasOverride=!isNaN(overrideRaw) && document.getElementById('stock-in-cost').value!=='';
+  const overrideCostPerBox=hasOverride?Math.max(0,overrideRaw):costPerBoxAuto;
+  const totalCostDisplay=hasOverride?(boxes*overrideCostPerBox):autoCost;
+  const costNote=hasOverride?`₱${overrideCostPerBox}/box override → total ${fmtPHP(totalCostDisplay)}`:`auto-cost ${fmtPHP(autoCost)} (₱${costPerBoxAuto}/box)`;
+  document.getElementById('stock-in-summary').textContent=totalPcs>0?`${totalPcs} pcs total · ${costNote}`:'';
 }
 
 function confirmStockIn() {
@@ -1822,15 +2164,20 @@ function confirmStockIn() {
   const ppb=f.piecesPerBox||data.settings.piecesPerBox;
   const totalPcs=boxes*ppb+extra;
   if(totalPcs<=0){showToast('⚠️ Enter boxes or pieces');return;}
-  const autoCost=boxes*(f.baseCost||data.settings.baseCost);
-  const costPaid=parseFloat(document.getElementById('stock-in-cost').value)||autoCost;
-  data.stockIns.push({id:uid(),flavorId,boxes,pieces:totalPcs,costPaid,ts:new Date().toISOString()});
+  const costPerBoxAuto=f.baseCost||data.settings.baseCost;
+  const autoCost=boxes*costPerBoxAuto;
+  const overrideRaw=parseFloat(document.getElementById('stock-in-cost').value);
+  const hasOverride=!isNaN(overrideRaw) && document.getElementById('stock-in-cost').value!=='' && overrideRaw>=0;
+  // Override is per-box; multiply by boxes
+  const costPaid=hasOverride?(overrideRaw*boxes):autoCost;
+  data.stockIns.push({id:uid(),flavorId,boxes,pieces:totalPcs,costPaid,costPerBox:hasOverride?overrideRaw:costPerBoxAuto,ts:new Date().toISOString()});
+  invalidateStockCache(flavorId);
   saveData();
-  const msg=`Stocked in ${totalPcs} pcs of ${f.name} (${boxes} boxes)`;
+  haptic('medium');
+  const msg=`Stocked in ${totalPcs} pcs of ${f.name} (${boxes} boxes) — ${fmtPHP(costPaid)}`;
   addNotif(msg); sendPushNotif('SweetLedger Stock 📦',msg);
   renderHome(); renderInventory(); closeModal('modal-stock-in');
   showToast(`📦 +${totalPcs} pcs added!`);
-
 }
 
 // ═══════════════════════════════════════════
@@ -1850,9 +2197,9 @@ function openFlavorDetail(id) {
 
   document.getElementById('flavor-detail-body').innerHTML=`
     <div class="flavor-detail-hero">
-      <div style="width:64px;height:64px;border-radius:18px;background:${BG_MAP[colorTag]||BG_MAP.pink};display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 10px">${f.emoji||'🍬'}</div>
+      <div style="width:64px;height:64px;border-radius:18px;background:${flavorBg(f)};display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 10px">${f.emoji||'🍬'}</div>
       <div class="flavor-detail-name">${f.name}</div>
-      <div style="margin-top:6px"><span class="pill-tag ${colorTag}">${colorTag}</span></div>
+      <div style="margin-top:6px"><span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-family:'Geist Mono',monospace;font-weight:600;background:${hexToRgba(f.color||'#b4a4ff',.15)};color:${f.color||'#b4a4ff'}">${(f.color||'').startsWith('#')?f.color.toUpperCase():f.color}</span></div>
     </div>
     <!-- Quick stats 3-col -->
     <div class="fds-grid">
@@ -1905,6 +2252,7 @@ function openAddFlavorModal() {
   document.getElementById('modal-flavor-title').textContent='Add Flavor';
   ['flavor-name-input','flavor-emoji-input','flavor-cost-input','flavor-sell-input','flavor-pieces-input','flavor-stock-input','flavor-notes-input'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('flavor-color-input').value='pink';
+  if(!_cwDrawn) drawColorWheel();
   updateColorWheelSelection('pink');
   openModal('modal-flavor');
 }
@@ -1921,6 +2269,7 @@ function openEditFlavor(id) {
   document.getElementById('flavor-stock-input').value=f.initialStock||'';
   document.getElementById('flavor-notes-input').value=f.notes||'';
   document.getElementById('flavor-color-input').value=f.color||'pink';
+  if(!_cwDrawn) drawColorWheel();
   updateColorWheelSelection(f.color||'pink');
   openModal('modal-flavor');
 }
@@ -1971,6 +2320,32 @@ function sendPushNotif(title,body){
   try{new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🍬</text></svg>'});}catch(e){}
 }
 
+// ── Haptic feedback — Android + iOS ────────
+function haptic(style) {
+  // Android / Chrome — Vibration API
+  if (navigator.vibrate) {
+    if (style === 'light') navigator.vibrate(18);
+    else if (style === 'heavy') navigator.vibrate([30, 10, 30]);
+    else navigator.vibrate(28); // medium default
+    return;
+  }
+  // iOS Safari 16.4+ — selectionChanged on a hidden input (scroll feedback)
+  // No programmatic access to Taptic Engine from web without WKWebView
+  // The AudioContext trick is audible on some devices so we skip it
+  // Best iOS haptic path: use the native <input type="range"> which fires haptic on value change
+  // For button taps — nothing we can do from vanilla JS on iOS without a PWA wrapper
+}
+
+function checkLowStockNotifs() {
+  const threshold=data.settings.lowStockThreshold||30;
+  data.flavors.forEach(f=>{
+    const stock=getFlavorStock(f.id);
+    if(stock>0 && stock<threshold) {
+      sendPushNotif('⚠️ Low Stock',`${f.emoji||'🍬'} ${f.name} is low — ${stock} pcs left`);
+    }
+  });
+}
+
 // ═══════════════════════════════════════════
 // MODALS & CONFIRMS
 // ═══════════════════════════════════════════
@@ -1988,14 +2363,38 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 let toastTimer;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);}
 
+function showToastWithUndo(msg, undoFn) {
+  const t=document.getElementById('toast');
+  t.innerHTML=msg+' <span id="toast-undo" style="text-decoration:underline;cursor:pointer;margin-left:8px;color:var(--lav)">Undo</span>';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+  requestAnimationFrame(()=>{
+    const u=document.getElementById('toast-undo');
+    if(u) u.addEventListener('click',()=>{ undoFn(); t.classList.remove('show'); });
+  });
+}
+
+function softDeleteSale(id) {
+  const s = data.sales.find(x=>x.id===id);
+  if(!s) return;
+  s.deleted=true;
+  invalidateStockCache(s.flavorId);
+  saveData(); renderLog(); renderHome();
+  showToast('🗑️ Sale removed');
+}
+
 function clearLogConfirm(){showConfirm('Clear Activity Log','This removes all log entries. Your flavor data and settings are kept.',()=>{data.notifLog=[];saveData();updateNotifBadge();renderLog();showToast('🗑️ Log cleared');});}
-function resetDailyConfirm(){showConfirm("Reset Today's Sales","Clears today's POS data only. Flavors and inventory remain.",()=>{const td=todayKey();data.sales=data.sales.filter(s=>s.ts.slice(0,10)!==td);saveData();renderHome();showToast('🗑️ Today\'s sales cleared');});}
-function nukeAllDataConfirm(){showConfirm('⚠️ Wipe ALL Data','Permanently deletes every sale, flavor, stock record and expense. There is no recovery.',()=>{data=defaultData();saveData();renderHome();renderInventory();renderSettings();showToast('💣 All data wiped');});}
+function resetDailyConfirm(){showConfirm("Reset Today's Sales","Clears today's POS data only. Flavors and inventory remain.",()=>{const td=todayKey();data.sales.forEach(s=>{if(manilaDateStr(s.ts)===td)s.deleted=true;});invalidateStockCache();saveData();renderHome();showToast('🗑️ Today\'s sales cleared');});}
+function nukeAllDataConfirm(){showConfirm('⚠️ Wipe ALL Data','Permanently deletes every sale, flavor, stock record and expense. There is no recovery.',()=>{data=defaultData();invalidateStockCache();saveData();renderHome();renderInventory();renderSettings();showToast('💣 All data wiped');});}
 
 // ═══════════════════════════════════════════
 // DATA EXPORT / IMPORT
 // ═══════════════════════════════════════════
 function exportData(){
+  if(!data.meta) data.meta={};
+  data.meta.lastExport = new Date().toISOString();
+  saveData();
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`sweetledger-backup-${todayKey()}.json`;a.click();
   showToast('📤 Export ready!');
@@ -2022,57 +2421,243 @@ function exportCSV(){
 }
 
 // ═══════════════════════════════════════════
-// COLOR WHEEL
+// COLOR WHEEL — full free pick via pixel read
 // ═══════════════════════════════════════════
-const canvas=document.getElementById('color-wheel-canvas');
-const ctx=canvas.getContext('2d');
-const pointer=document.getElementById('color-wheel-pointer');
-const brightnessSlider=document.getElementById('color-wheel-brightness');
-const indicator=document.getElementById('color-wheel-indicator');
-const textLabel=document.getElementById('color-wheel-text');
-const hiddenInput=document.getElementById('flavor-color-input');
-const AVAILABLE_TAGS=[{name:'pink',angleStart:-30,angleEnd:45,color:'#f4a8be'},{name:'peach',angleStart:45,angleEnd:105,color:'#f5c07a'},{name:'yellow',angleStart:105,angleEnd:165,color:'#f5e07a'},{name:'mint',angleStart:165,angleEnd:245,color:'#7ecfad'},{name:'lav',angleStart:245,angleEnd:330,color:'#b4a4ff'}];
-const TAG_COORDINATE_ANGLES={pink:10,peach:75,yellow:135,mint:205,lav:285};
+const _cwCanvas   = document.getElementById('color-wheel-canvas');
+const _cwCtx      = _cwCanvas.getContext('2d');
+const _cwPointer  = document.getElementById('color-wheel-pointer');
+const _cwSlider   = document.getElementById('color-wheel-brightness');
+const _cwIndicator= document.getElementById('color-wheel-indicator');
+const _cwTextLabel= document.getElementById('color-wheel-text');
+const _cwInput    = document.getElementById('flavor-color-input');
 
-function drawColorWheel(){
-  const radius=canvas.width/2,cx=radius,cy=radius,brightness=parseInt(brightnessSlider.value)/100;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for(let y=0;y<canvas.height;y++){for(let x=0;x<canvas.width;x++){const dx=x-cx,dy=y-cy,dist=Math.sqrt(dx*dx+dy*dy);if(dist<=radius){let angle=Math.atan2(dy,dx)*(180/Math.PI);if(angle<0)angle+=360;let sat=Math.min(1,dist/radius)*100;let lgt=(100-(sat*.25))*brightness;ctx.fillStyle=`hsl(${angle},${sat}%,${lgt}%)`;ctx.fillRect(x,y,1,1);}}}
-}
+// Offscreen canvas for clean pixel reads without pointer overdraw
+let _cwOffscreen  = null;
 
-function updateColorWheelSelection(tagName){
-  const radius=canvas.width/2,angleDeg=TAG_COORDINATE_ANGLES[tagName]||0,angleRad=angleDeg*(Math.PI/180),rDistance=radius*.7;
-  pointer.style.left=`${radius+rDistance*Math.cos(angleRad)}px`;
-  pointer.style.top=`${radius+rDistance*Math.sin(angleRad)}px`;
-  hiddenInput.value=tagName; textLabel.textContent=tagName; indicator.style.backgroundColor=COLOR_MAP[tagName];
-}
+function _rgbToHex(r,g,b){return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');}
 
-function handleWheelSelection(e){
-  const rect=canvas.getBoundingClientRect(),radius=canvas.width/2,x=e.clientX-rect.left,y=e.clientY-rect.top,dx=x-radius,dy=y-radius,dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist<=radius){
-    pointer.style.left=`${x}px`;pointer.style.top=`${y}px`;
-    let angle=Math.atan2(dy,dx)*(180/Math.PI);if(angle<0)angle+=360;
-    let matchedTag=AVAILABLE_TAGS.find(tag=>{let s=tag.angleStart<0?tag.angleStart+360:tag.angleStart,en=tag.angleEnd<0?tag.angleEnd+360:tag.angleEnd;return s>en?angle>=s||angle<=en:angle>=s&&angle<=en;})||AVAILABLE_TAGS[0];
-    hiddenInput.value=matchedTag.name;textLabel.textContent=matchedTag.name;indicator.style.backgroundColor=COLOR_MAP[matchedTag.name];
+let _cwDrawn = false;
+
+function drawColorWheel() {
+  _cwDrawn = true;
+  const SIZE = _cwCanvas.width; // 150
+  const cx = SIZE/2, cy = SIZE/2, radius = SIZE/2;
+  const brightness = parseFloat(_cwSlider.value) / 100;
+
+  // Build on offscreen canvas so pixel reads are clean
+  if (!_cwOffscreen) {
+    _cwOffscreen = document.createElement('canvas');
+    _cwOffscreen.width = SIZE; _cwOffscreen.height = SIZE;
   }
+  const offCtx = _cwOffscreen.getContext('2d');
+  const imgData = offCtx.createImageData(SIZE, SIZE);
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const dx = x - cx, dy = y - cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist <= radius) {
+        let hue = Math.atan2(dy, dx) * (180 / Math.PI);
+        if (hue < 0) hue += 360;
+        const sat = Math.min(1, dist / radius);
+        const lgt = brightness * (1 - sat * 0.25);
+        // HSL → RGB inline
+        const c = (1 - Math.abs(2*lgt - 1)) * sat;
+        const xv = c * (1 - Math.abs((hue/60)%2 - 1));
+        const m = lgt - c/2;
+        let r=0,g=0,b=0;
+        if(hue<60){r=c;g=xv;}else if(hue<120){r=xv;g=c;}
+        else if(hue<180){g=c;b=xv;}else if(hue<240){g=xv;b=c;}
+        else if(hue<300){r=xv;b=c;}else{r=c;b=xv;}
+        const idx = (y*SIZE + x)*4;
+        imgData.data[idx]   = Math.round((r+m)*255);
+        imgData.data[idx+1] = Math.round((g+m)*255);
+        imgData.data[idx+2] = Math.round((b+m)*255);
+        imgData.data[idx+3] = 255;
+      }
+    }
+  }
+  offCtx.putImageData(imgData, 0, 0);
+
+  // Draw circle clip on visible canvas
+  _cwCtx.clearRect(0, 0, SIZE, SIZE);
+  _cwCtx.save();
+  _cwCtx.beginPath();
+  _cwCtx.arc(cx, cy, radius, 0, Math.PI*2);
+  _cwCtx.clip();
+  _cwCtx.drawImage(_cwOffscreen, 0, 0);
+  _cwCtx.restore();
 }
 
-canvas.addEventListener('mousedown',handleWheelSelection);
-canvas.addEventListener('mousemove',e=>{if(e.buttons===1)handleWheelSelection(e);});
-canvas.addEventListener('touchstart',e=>{if(e.touches.length===1)handleWheelSelection(e.touches[0]);},{passive:true});
-canvas.addEventListener('touchmove',e=>{if(e.touches.length===1)handleWheelSelection(e.touches[0]);},{passive:true});
-brightnessSlider.addEventListener('input',()=>{drawColorWheel();updateColorWheelSelection(hiddenInput.value);});
+function _pickColorAt(canvasX, canvasY) {
+  if (!_cwOffscreen) return '#b4a4ff';
+  const SIZE = _cwCanvas.width;
+  const offCtx = _cwOffscreen.getContext('2d');
+  const px = offCtx.getImageData(Math.round(canvasX), Math.round(canvasY), 1, 1).data;
+  return _rgbToHex(px[0], px[1], px[2]);
+}
+
+function _applyColorPick(canvasX, canvasY) {
+  const SIZE = _cwCanvas.width;
+  _cwPointer.style.left = canvasX + 'px';
+  _cwPointer.style.top  = canvasY + 'px';
+  const hex = _pickColorAt(canvasX, canvasY);
+  _cwInput.value = hex;
+  _cwTextLabel.textContent = hex.toUpperCase();
+  _cwIndicator.style.backgroundColor = hex;
+}
+
+// Move from canvas coordinates (element space) to actual pixel position
+function _resolveCanvasCoords(e) {
+  const rect = _cwCanvas.getBoundingClientRect();
+  const scaleX = _cwCanvas.width  / rect.width;
+  const scaleY = _cwCanvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top)  * scaleY,
+    // also keep element coords for pointer placement
+    ex: e.clientX - rect.left,
+    ey: e.clientY - rect.top
+  };
+}
+
+function handleWheelClick(e) {
+  const {x, y, ex, ey} = _resolveCanvasCoords(e);
+  const cx = _cwCanvas.width/2, cy = _cwCanvas.height/2;
+  const dist = Math.sqrt((x-cx)**2 + (y-cy)**2);
+  if (dist <= cx) _applyColorPick(x, y);
+}
+
+_cwCanvas.addEventListener('mousedown', handleWheelClick);
+_cwCanvas.addEventListener('mousemove', e => { if(e.buttons===1) handleWheelClick(e); });
+_cwCanvas.addEventListener('touchstart', e => { if(e.touches.length===1){ e.preventDefault(); handleWheelClick(e.touches[0]); } }, {passive:false});
+_cwCanvas.addEventListener('touchmove',  e => { if(e.touches.length===1){ e.preventDefault(); handleWheelClick(e.touches[0]); } }, {passive:false});
+_cwSlider.addEventListener('input', () => { drawColorWheel(); });
+
+// Called when opening add/edit flavor modal to restore stored color
+function updateColorWheelSelection(colorVal) {
+  // If it's a legacy tag name, convert to hex
+  if (colorVal && !colorVal.startsWith('#')) {
+    colorVal = LEGACY_COLOR_MAP[colorVal] || '#b4a4ff';
+  }
+  if (!colorVal) colorVal = '#b4a4ff';
+  _cwInput.value = colorVal;
+  _cwTextLabel.textContent = colorVal.toUpperCase();
+  _cwIndicator.style.backgroundColor = colorVal;
+  // Place pointer at center (neutral) when opening — user picks from wheel
+  const cx = _cwCanvas.width/2, cy = _cwCanvas.height/2;
+  _cwPointer.style.left = cx + 'px';
+  _cwPointer.style.top  = cy + 'px';
+}
+
+// ═══════════════════════════════════════════
+// ONBOARDING WIZARD
+// ═══════════════════════════════════════════
+let _obStep = 1;
+
+function _showOnboarding() {
+  document.getElementById('onboarding-overlay').style.display='flex';
+  _setObStep(1);
+}
+function _hideOnboarding() {
+  document.getElementById('onboarding-overlay').style.display='none';
+  data.settings._onboardingDone=true;
+  saveData();
+}
+function _setObStep(n) {
+  _obStep=n;
+  [1,2,3].forEach(i=>{
+    document.getElementById('ob-step-'+i).style.display=i===n?'':'none';
+  });
+}
+function obNextShopName() {
+  const name=document.getElementById('ob-shop-name').value.trim();
+  if(name){data.settings.shopName=name;saveData();document.getElementById('home-shop-name').textContent=name+' ▾';}
+  _setObStep(2);
+}
+function obNextFlavor() {
+  const name=document.getElementById('ob-flavor-name').value.trim();
+  if(!name){showToast('⚠️ Enter a flavor name');return;}
+  const f={id:uid(),name,emoji:document.getElementById('ob-flavor-emoji').value.trim()||'🍬',
+    baseCost:parseFloat(document.getElementById('ob-flavor-cost').value)||data.settings.baseCost,
+    sellPrice:parseFloat(document.getElementById('ob-flavor-sell').value)||data.settings.sellPrice,
+    piecesPerBox:data.settings.piecesPerBox,initialStock:0,color:'#b4a4ff',notes:''};
+  data.flavors.push(f); saveData();
+  _setObStep(3);
+  document.getElementById('ob-stock-flavor-name').textContent=name;
+  document.getElementById('ob-stock-flavor-id').value=f.id;
+}
+function obFinishStockIn() {
+  const flavorId=document.getElementById('ob-stock-flavor-id').value;
+  const f=getFlavorById(flavorId);
+  const boxes=parseInt(document.getElementById('ob-boxes').value)||0;
+  if(boxes>0&&f){
+    const ppb=f.piecesPerBox||data.settings.piecesPerBox;
+    const totalPcs=boxes*ppb;
+    const costPaid=boxes*(f.baseCost||data.settings.baseCost);
+    data.stockIns.push({id:uid(),flavorId,boxes,pieces:totalPcs,costPaid,costPerBox:f.baseCost||data.settings.baseCost,ts:new Date().toISOString()});
+    invalidateStockCache(flavorId); saveData();
+  }
+  _hideOnboarding();
+  renderHome(); renderInventory();
+  showToast('🍬 Welcome to SweetLedger!');
+}
 
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 loadData();
 renderHome();
-updateNotifBadge();
-drawColorWheel();
+// Defer non-critical inits so first paint isn't blocked
+const _idle = window.requestIdleCallback || (fn => setTimeout(fn, 80));
+_idle(() => { updateNotifBadge(); _checkBackupNudge(); });
+_idle(() => { if('Notification' in window) document.getElementById('notif-status').textContent='Permission: '+Notification.permission; });
 _initPills();
 
-if('Notification' in window) document.getElementById('notif-status').textContent='Permission: '+Notification.permission;
+// Show onboarding for fresh installs
+if(!data.settings._onboardingDone && !data.flavors.length) {
+  setTimeout(_showOnboarding, 400);
+}
+
 </script>
+<!-- ONBOARDING WIZARD -->
+<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;background:rgba(13,13,16,.92);z-index:9999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r1);padding:28px 22px;max-width:360px;width:100%">
+    <div style="font-size:28px;text-align:center;margin-bottom:8px">🍬</div>
+    <div style="font-size:18px;font-weight:800;text-align:center;margin-bottom:4px">Welcome to SweetLedger</div>
+    <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:20px;font-family:'Geist Mono',monospace">Let's set up your shop in 3 quick steps</div>
+
+    <!-- Step 1: Shop Name -->
+    <div id="ob-step-1">
+      <div style="font-size:11px;color:var(--lav);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Step 1 of 3 — Shop Name</div>
+      <div class="field"><label>Your shop name</label><input type="text" id="ob-shop-name" placeholder="e.g. Mia's Candies" autocomplete="off"></div>
+      <button class="btn btn-primary" onclick="obNextShopName()">Next →</button>
+    </div>
+
+    <!-- Step 2: First Flavor -->
+    <div id="ob-step-2" style="display:none">
+      <div style="font-size:11px;color:var(--lav);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Step 2 of 3 — First Candy Flavor</div>
+      <div class="field"><label>Flavor name</label><input type="text" id="ob-flavor-name" placeholder="e.g. Strawberry" autocomplete="off"></div>
+      <div class="field"><label>Emoji</label><input type="text" id="ob-flavor-emoji" placeholder="🍓" maxlength="4"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <div class="field"><label>Cost/box (₱)</label><input type="number" id="ob-flavor-cost" placeholder="100" min="0"></div>
+        <div class="field"><label>Sell/box (₱)</label><input type="number" id="ob-flavor-sell" placeholder="300" min="0"></div>
+      </div>
+      <button class="btn btn-primary" onclick="obNextFlavor()">Next →</button>
+    </div>
+
+    <!-- Step 3: First Stock In -->
+    <div id="ob-step-3" style="display:none">
+      <div style="font-size:11px;color:var(--lav);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Step 3 of 3 — Starting Stock</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">How many boxes of <strong id="ob-stock-flavor-name"></strong> do you have now?</div>
+      <input type="hidden" id="ob-stock-flavor-id">
+      <div class="field"><label>Boxes</label><input type="number" id="ob-boxes" placeholder="0" min="0"></div>
+      <button class="btn btn-primary" onclick="obFinishStockIn()">Start Selling 🚀</button>
+      <div style="height:7px"></div>
+      <button class="btn btn-secondary" onclick="_hideOnboarding()">Skip for now</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
