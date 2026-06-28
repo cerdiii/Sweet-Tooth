@@ -55,18 +55,14 @@
   --r:  18px;
   --r2: 12px;
   --r3: 8px;
-
-  /* iOS PWA safe areas */
-  --sat: env(safe-area-inset-top, 0px);
-  --sab: env(safe-area-inset-bottom, 0px);
 }
 
 /* ═══════════════════════════════════════════
    RESET & BASE
 ═══════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-html{height:100%;height:-webkit-fill-available;overscroll-behavior:none}
-body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html{height:100dvh;overscroll-behavior:none}
+body{height:100dvh;min-height:100dvh;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 /* ═══════════════════════════════════════════
    APP SHELL
@@ -80,7 +76,7 @@ body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:va
 .view.active{opacity:1;pointer-events:all;transform:translateY(0)}
 
 /* SCROLL AREA */
-.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(42px + max(calc(env(safe-area-inset-bottom,0px) - 20px),8px));-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(60px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .scroll-area::-webkit-scrollbar{display:none}
 
 /* ═══════════════════════════════════════════
@@ -177,12 +173,12 @@ body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:va
 /* ═══════════════════════════════════════════
    BOTTOM NAVIGATION
 ═══════════════════════════════════════════ */
-.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:rgba(13,13,16,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);padding:5px 0 max(calc(env(safe-area-inset-bottom,0px) - 20px),8px);display:flex;justify-content:space-around;z-index:100;flex-shrink:0}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;padding:0 14px 0;transition:transform .1s;position:relative;-webkit-user-select:none}
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:rgba(13,13,16,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);padding:7px 0 max(env(safe-area-inset-bottom,0px),6px);display:flex;justify-content:space-around;z-index:100;flex-shrink:0}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:1px 18px 2px;transition:transform .1s;position:relative;-webkit-user-select:none}
 .nav-item:active{transform:scale(.88)}
-.nav-icon{font-size:20px;opacity:.32;transition:opacity .18s,transform .2s cubic-bezier(.34,1.56,.64,1)}
-.nav-label{font-size:8px;color:var(--text3);font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:color .18s;font-family:'Geist Mono',monospace}
-.nav-item.active .nav-icon{opacity:1;transform:scale(1.1) translateY(-1px)}
+.nav-icon{font-size:22px;opacity:.32;transition:opacity .18s,transform .2s cubic-bezier(.34,1.56,.64,1)}
+.nav-label{font-size:9px;color:var(--text3);font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:color .18s;font-family:'Geist Mono',monospace}
+.nav-item.active .nav-icon{opacity:1;transform:scale(1.12) translateY(-1px)}
 .nav-item.active .nav-label{color:var(--lav)}
 
 /* ═══════════════════════════════════════════
@@ -190,7 +186,7 @@ body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:va
 ═══════════════════════════════════════════ */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s ease}
 .modal-overlay.open{opacity:1;pointer-events:all}
-.modal-sheet{background:var(--bg2);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:0 0 max(env(safe-area-inset-bottom,0px),24px);max-height:92dvh;overflow-y:auto;transform:translateY(30px);transition:transform .28s cubic-bezier(.34,1.4,.64,1)}
+.modal-sheet{background:var(--bg2);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:0 0 env(safe-area-inset-bottom,24px);max-height:92dvh;overflow-y:auto;transform:translateY(30px);transition:transform .28s cubic-bezier(.34,1.4,.64,1)}
 .modal-overlay.open .modal-sheet{transform:translateY(0)}
 .modal-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:14px auto 22px}
 .modal-title{font-size:17px;font-weight:700;padding:0 22px 16px;border-bottom:1px solid var(--border)}
@@ -221,7 +217,7 @@ body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:va
 /* ═══════════════════════════════════════════
    POS VIEW
 ═══════════════════════════════════════════ */
-.pos-header{padding:calc(env(safe-area-inset-top,0px) + 12px) 20px 6px}
+.pos-header{padding:20px 20px 8px}
 .pos-title{font-size:22px;font-weight:800}
 .pos-subtitle{font-size:12px;color:var(--text2);margin-top:2px}
 .sale-type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 18px}
@@ -300,7 +296,7 @@ body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:va
 /* ═══════════════════════════════════════════
    CALENDAR
 ═══════════════════════════════════════════ */
-.cal-header{padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cal-header{padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between}
 .cal-month-nav{display:flex;align-items:center;gap:12px}
 .cal-month-name{font-size:18px;font-weight:800}
 .cal-nav-btn{width:30px;height:30px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:14px;transition:all .16s}
@@ -599,10 +595,10 @@ body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:va
     </div>
     <!-- STATS -->
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-label">Boxes Sold</div><div class="stat-val green" id="home-boxes-sold">0</div><div class="stat-sub">today</div></div>
-      <div class="stat-card"><div class="stat-label">Pieces Sold</div><div class="stat-val lav" id="home-pieces-sold">0</div><div class="stat-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Boxes Sold</div><div class="stat-val green" id="home-boxes-sold">0</div><div class="stat-sub" id="home-boxes-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Pieces Sold</div><div class="stat-val lav" id="home-pieces-sold">0</div><div class="stat-sub" id="home-pieces-sub">today</div></div>
       <div class="stat-card"><div class="stat-label">Total Stock</div><div class="stat-val peach" id="home-total-stock">0</div><div class="stat-sub">pieces left</div></div>
-      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-val red" id="home-expenses">₱0</div><div class="stat-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-val red" id="home-expenses">₱0</div><div class="stat-sub" id="home-expenses-sub">today</div></div>
     </div>
     <!-- FLAVORS -->
     <div class="sec-header"><span class="sec-title">Flavors</span><span class="sec-action" onclick="openAddFlavorModal()">+ Add</span></div>
@@ -681,8 +677,8 @@ body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:va
       <div class="icon-btn" onclick="openAddFlavorModal()">➕</div>
     </div>
   </div>
+  <div class="search-bar" style="margin-bottom:18px"><span class="search-icon">🔍</span><input type="text" id="inv-search" placeholder="Search flavors..." oninput="renderInventory()"></div>
   <div class="scroll-area" style="padding-top:4px">
-    <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="inv-search" placeholder="Search flavors..." oninput="renderInventory()"></div>
     <div id="inv-list"></div>
     <div class="spacer"></div>
   </div>
@@ -1244,9 +1240,9 @@ function renderHome() {
   const revenue  = sumBy(activeSales, s=>s.totalRevenue);
   const profit   = sumBy(activeSales, s=>s.profit);
   const margin   = revenue>0?Math.round(profit/revenue*100):0;
-  const todayExp = sumBy(getTodayExpenses(), e=>e.amount);
-  const boxesSold  = sumBy(todaySales.filter(s=>s.type==='box'), s=>s.qty);
-  const piecesSold = sumBy(todaySales.filter(s=>s.type==='piece'), s=>s.qty);
+  const activeExp  = heroPeriod==='today' ? sumBy(getTodayExpenses(), e=>e.amount) : sumBy(data.expenses, e=>e.amount);
+  const boxesSold  = sumBy(activeSales.filter(s=>s.type==='box'), s=>s.qty);
+  const piecesSold = sumBy(activeSales.filter(s=>s.type==='piece'), s=>s.qty);
   const totalStock = sumBy(data.flavors, f=>getFlavorStock(f.id));
 
   document.getElementById('home-hero-label').textContent = heroPeriod==='today'?"TODAY'S REVENUE":'LIFETIME REVENUE';
@@ -1262,7 +1258,11 @@ function renderHome() {
   document.getElementById('home-boxes-sold').textContent  = boxesSold;
   document.getElementById('home-pieces-sold').textContent = piecesSold;
   document.getElementById('home-total-stock').textContent = totalStock;
-  document.getElementById('home-expenses').textContent    = heroHidden?'₱'+MASK:fmtPHPShort(todayExp);
+  document.getElementById('home-expenses').textContent    = heroHidden?'₱'+MASK:fmtPHPShort(activeExp);
+  const periodLabel = heroPeriod==='today' ? 'today' : 'lifetime';
+  document.getElementById('home-boxes-sub').textContent    = periodLabel;
+  document.getElementById('home-pieces-sub').textContent   = periodLabel;
+  document.getElementById('home-expenses-sub').textContent = periodLabel;
   document.getElementById('home-shop-name').innerHTML = (data.settings.shopName||'My Candy Shop')+' <span style="font-size:10px;color:var(--text3)">▾</span>';
 
   // Daily goal
