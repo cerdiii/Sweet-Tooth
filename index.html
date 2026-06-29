@@ -61,8 +61,8 @@
    RESET & BASE
 ═══════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-html{height:100dvh;overscroll-behavior:none}
-body{height:100dvh;min-height:100dvh;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html{height:100%;overscroll-behavior:none}
+body{height:100%;min-height:100%;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 /* ═══════════════════════════════════════════
    APP SHELL
@@ -2620,6 +2620,23 @@ if('Notification' in window) document.getElementById('notif-status').textContent
 if(!data.settings._onboardingDone && !data.flavors.length) {
   setTimeout(_showOnboarding, 400);
 }
+
+// ── iOS PWA viewport height fix ──────────────────────────────────────────────
+// CSS viewport units (dvh/vh) get recalculated after the first paint on iOS
+// Safari PWA, causing the layout to squish. Locking body + #app to a JS pixel
+// value makes it immune to that post-paint recalc.
+function _applyVh() {
+  const h = window.innerHeight;
+  document.body.style.height = h + 'px';
+  document.body.style.minHeight = h + 'px';
+  const app = document.getElementById('app');
+  if (app) app.style.height = h + 'px';
+}
+_applyVh();
+setTimeout(_applyVh, 100); // catch iOS post-paint recalc
+window.addEventListener('resize', _applyVh);
+window.addEventListener('orientationchange', () => setTimeout(_applyVh, 300));
+// ─────────────────────────────────────────────────────────────────────────────
 
 </script>
 <!-- ONBOARDING WIZARD -->
