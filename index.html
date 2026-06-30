@@ -61,13 +61,13 @@
    RESET & BASE
 ═══════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-html{height:100%;overscroll-behavior:none}
-body{height:100%;min-height:100%;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html{height:100%;height:-webkit-fill-available;overscroll-behavior:none}
+body{height:100%;min-height:100%;min-height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 /* ═══════════════════════════════════════════
    APP SHELL
 ═══════════════════════════════════════════ */
-#app{width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--bg)}
+#app{position:fixed;inset:0;max-width:430px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 
 /* VIEWS */
 .view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;
@@ -595,10 +595,10 @@ body{height:100%;min-height:100%;background:var(--bg);color:var(--text);font-fam
     </div>
     <!-- STATS -->
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-label">Boxes Sold</div><div class="stat-val green" id="home-boxes-sold">0</div><div class="stat-sub" id="home-boxes-sub">today</div></div>
-      <div class="stat-card"><div class="stat-label">Pieces Sold</div><div class="stat-val lav" id="home-pieces-sold">0</div><div class="stat-sub" id="home-pieces-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Boxes Sold</div><div class="stat-val green" id="home-boxes-sold">0</div><div class="stat-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Pieces Sold</div><div class="stat-val lav" id="home-pieces-sold">0</div><div class="stat-sub">today</div></div>
       <div class="stat-card"><div class="stat-label">Total Stock</div><div class="stat-val peach" id="home-total-stock">0</div><div class="stat-sub">pieces left</div></div>
-      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-val red" id="home-expenses">₱0</div><div class="stat-sub" id="home-expenses-sub">today</div></div>
+      <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-val red" id="home-expenses">₱0</div><div class="stat-sub">today</div></div>
     </div>
     <!-- FLAVORS -->
     <div class="sec-header"><span class="sec-title">Flavors</span><span class="sec-action" onclick="openAddFlavorModal()">+ Add</span></div>
@@ -1240,9 +1240,9 @@ function renderHome() {
   const revenue  = sumBy(activeSales, s=>s.totalRevenue);
   const profit   = sumBy(activeSales, s=>s.profit);
   const margin   = revenue>0?Math.round(profit/revenue*100):0;
-  const activeExp  = heroPeriod==='today' ? sumBy(getTodayExpenses(), e=>e.amount) : sumBy(data.expenses, e=>e.amount);
-  const boxesSold  = sumBy(activeSales.filter(s=>s.type==='box'), s=>s.qty);
-  const piecesSold = sumBy(activeSales.filter(s=>s.type==='piece'), s=>s.qty);
+  const todayExp = sumBy(getTodayExpenses(), e=>e.amount);
+  const boxesSold  = sumBy(todaySales.filter(s=>s.type==='box'), s=>s.qty);
+  const piecesSold = sumBy(todaySales.filter(s=>s.type==='piece'), s=>s.qty);
   const totalStock = sumBy(data.flavors, f=>getFlavorStock(f.id));
 
   document.getElementById('home-hero-label').textContent = heroPeriod==='today'?"TODAY'S REVENUE":'LIFETIME REVENUE';
@@ -1258,11 +1258,7 @@ function renderHome() {
   document.getElementById('home-boxes-sold').textContent  = boxesSold;
   document.getElementById('home-pieces-sold').textContent = piecesSold;
   document.getElementById('home-total-stock').textContent = totalStock;
-  document.getElementById('home-expenses').textContent    = heroHidden?'₱'+MASK:fmtPHPShort(activeExp);
-  const periodLabel = heroPeriod==='today' ? 'today' : 'lifetime';
-  document.getElementById('home-boxes-sub').textContent    = periodLabel;
-  document.getElementById('home-pieces-sub').textContent   = periodLabel;
-  document.getElementById('home-expenses-sub').textContent = periodLabel;
+  document.getElementById('home-expenses').textContent    = heroHidden?'₱'+MASK:fmtPHPShort(todayExp);
   document.getElementById('home-shop-name').innerHTML = (data.settings.shopName||'My Candy Shop')+' <span style="font-size:10px;color:var(--text3)">▾</span>';
 
   // Daily goal
@@ -2620,23 +2616,6 @@ if('Notification' in window) document.getElementById('notif-status').textContent
 if(!data.settings._onboardingDone && !data.flavors.length) {
   setTimeout(_showOnboarding, 400);
 }
-
-// ── iOS PWA viewport height fix ──────────────────────────────────────────────
-// CSS viewport units (dvh/vh) get recalculated after the first paint on iOS
-// Safari PWA, causing the layout to squish. Locking body + #app to a JS pixel
-// value makes it immune to that post-paint recalc.
-function _applyVh() {
-  const h = window.innerHeight;
-  document.body.style.height = h + 'px';
-  document.body.style.minHeight = h + 'px';
-  const app = document.getElementById('app');
-  if (app) app.style.height = h + 'px';
-}
-_applyVh();
-setTimeout(_applyVh, 100); // catch iOS post-paint recalc
-window.addEventListener('resize', _applyVh);
-window.addEventListener('orientationchange', () => setTimeout(_applyVh, 300));
-// ─────────────────────────────────────────────────────────────────────────────
 
 </script>
 <!-- ONBOARDING WIZARD -->
