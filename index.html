@@ -78,11 +78,14 @@ html{height:100%;height:-webkit-fill-available;height:100dvh;overscroll-behavior
 body{height:100%;height:-webkit-fill-available;height:100dvh;background:var(--bg);color:var(--text);font-family:'Geist',sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 /* Belt-and-suspenders: when launched from the home-screen icon (no Safari
-   chrome exists at all), force the exact dynamic viewport height so nothing
-   reserved for a floating browser address bar can leak in as dead space. */
+   chrome exists at all), force the exact dynamic viewport height on the
+   document so nothing reserved for a floating browser address bar can
+   leak in as dead space. #app itself is intentionally NOT re-heighted
+   here — it already gets its size from position:fixed;inset:0 below,
+   which is the true edge-to-edge box. Forcing height:100dvh on top of
+   that fought with it and is what re-introduced the bottom gap. */
 @media (display-mode: standalone){
   html, body{height:100dvh}
-  #app{height:100dvh}
 }
 
 /* ═══════════════════════════════════════════
