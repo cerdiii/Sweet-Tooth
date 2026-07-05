@@ -1260,7 +1260,7 @@ function switchView(name) {
 // ═══════════════════════════════════════════
 function renderHome() {
   const todaySales    = getTodaySales();
-  const activeSales   = heroPeriod==='today' ? todaySales : data.sales;
+  const activeSales   = heroPeriod==='today' ? todaySales : data.sales.filter(s=>!s.deleted);
   const revenue  = sumBy(activeSales, s=>s.totalRevenue);
   const profit   = sumBy(activeSales, s=>s.profit);
   const margin   = revenue>0?Math.round(profit/revenue*100):0;
@@ -1503,7 +1503,7 @@ function renderInventory() {
     const stock=getFlavorStock(f.id);
     const ppb=f.piecesPerBox||data.settings.piecesPerBox;
     const boxes=Math.floor(stock/ppb), remainder=stock%ppb;
-    const ltSales=data.sales.filter(s=>s.flavorId===f.id);
+    const ltSales=data.sales.filter(s=>s.flavorId===f.id && !s.deleted);
     const ltRev=ltSales.reduce((a,s)=>a+s.totalRevenue,0);
     const ltProfit=ltSales.reduce((a,s)=>a+s.profit,0);
     const marginPct=ltRev>0?Math.round(ltProfit/ltRev*100):0;
@@ -1761,9 +1761,10 @@ function _initAnalyticsScrollAnims(rows, total) {
 }
 
 function _calcAvgDailyRevenue() {
-  const days=new Set(data.sales.map(s=>s.ts.slice(0,10)));
+  const activeSales=data.sales.filter(s=>!s.deleted);
+  const days=new Set(activeSales.map(s=>s.ts.slice(0,10)));
   if(!days.size) return 0;
-  return sumBy(data.sales,s=>s.totalRevenue)/days.size;
+  return sumBy(activeSales,s=>s.totalRevenue)/days.size;
 }
 
 let _revChartAnim = null;
@@ -2209,7 +2210,7 @@ function confirmStockIn() {
 function openFlavorDetail(id) {
   const f=getFlavorById(id);
   const stock=getFlavorStock(id);
-  const allSales=data.sales.filter(s=>s.flavorId===id);
+  const allSales=data.sales.filter(s=>s.flavorId===id && !s.deleted);
   const ltRev=allSales.reduce((a,s)=>a+s.totalRevenue,0);
   const ltProfit=allSales.reduce((a,s)=>a+s.profit,0);
   const margin=ltRev>0?Math.round(ltProfit/ltRev*100):0;
