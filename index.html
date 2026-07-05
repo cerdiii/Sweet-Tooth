@@ -2426,7 +2426,7 @@ function importDataPrompt(){document.getElementById('import-file-input').click()
 function importData(event){
   const file=event.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=e=>{try{data=JSON.parse(e.target.result);migrateData();saveData();renderHome();renderSettings();showToast('✅ Data imported!');}catch(err){showToast('❌ Invalid file');}};
+  reader.onload=e=>{try{data=JSON.parse(e.target.result);migrateData();invalidateStockCache();saveData();renderHome();renderSettings();showToast('✅ Data imported!');}catch(err){showToast('❌ Invalid file');}};
   reader.readAsText(file); event.target.value='';
 }
 function exportCSV(){
