@@ -62,6 +62,13 @@
      collision bug: two headers below never got the inset added). */
   --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Corrected at runtime by the viewport engine JS below, to the
+     LIVE window.visualViewport.height, in px. 100dvh is only the
+     pre-JS/no-JS fallback — dvh is the unit that's known to go stale
+     in iOS standalone PWAs after backgrounding, keyboard, or rotation,
+     which is exactly the staleness this variable exists to correct. */
+  --app-height: 100dvh;
 }
 
 /* ═══════════════════════════════════════════
@@ -91,7 +98,13 @@ body{height:100%;height:-webkit-fill-available;height:100dvh;background:var(--bg
 /* ═══════════════════════════════════════════
    APP SHELL
 ═══════════════════════════════════════════ */
-#app{position:fixed;inset:0;max-width:430px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+/* top/left/right stay pinned exactly as before (inset:0's job for those
+   three sides). height is now live px from the viewport engine instead
+   of being left to the browser's own dvh re-resolution — `bottom` is
+   deliberately NOT set, so this never fights inset:0 the way a bare
+   height:100dvh addition did previously (that made top+bottom+height
+   all explicit at once, which is what produced the earlier gap). */
+#app{position:fixed;top:0;left:0;right:0;height:var(--app-height);max-width:430px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 
 /* VIEWS */
 .view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;
@@ -2628,6 +2641,165 @@ function obFinishStockIn() {
 }
 
 // ═══════════════════════════════════════════
+// VIEWPORT ENGINE
+// ---------------------------------------------
+// #app previously trusted the browser to keep 100dvh / env(safe-area-
+// inset-bottom) correct on its own. iOS/WKWebView is known to leave
+// those stale — not recomputed — after the software keyboard closes,
+// after the PWA is backgrounded and resumed, or after a rotation.
+// Nothing in this file ever listened for those moments, so the stale
+// value just sat there showing a gap ("chin") under the bottom nav
+// until something forced a fresh layout — which a full relaunch does
+// incidentally, by rebuilding the WKWebView from scratch. That matches
+// exactly what was reported: fixed by restart, no code changes.
+//
+// Fix: stop trusting the cached CSS resolution. On every event where
+// iOS is known to change or misreport the viewport, re-measure it
+// natively via window.visualViewport (the same live source iOS itself
+// uses for keyboard/inset avoidance) and push that real px value into
+// --app-height, which #app now reads. inset:0's top/left/right are
+// untouched — only height is corrected, and only in response to real
+// events, so this never fights the box model the way a bare
+// height:100dvh addition did before (see the comment on #app).
+// ═══════════════════════════════════════════
+const _vp = { last:null, history:[] };
+
+function _probeHeight(unit){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;left:-9999px;top:0;width:1px;height:100${unit};visibility:hidden;pointer-events:none`;
+  document.body.appendChild(el);
+  const h=el.getBoundingClientRect().height;
+  el.remove();
+  return h;
+}
+function _probeSafeBottom(){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none';
+  document.body.appendChild(el);
+  const h=parseFloat(getComputedStyle(el).paddingBottom)||0;
+  el.remove();
+  return h;
+}
+function _measureViewport(reason){
+  const vv=window.visualViewport;
+  const app=document.getElementById('app');
+  const nav=document.querySelector('.bottom-nav');
+  const appRect=app.getBoundingClientRect();
+  const navRect=nav?nav.getBoundingClientRect():null;
+  return {
+    reason, t:new Date().toLocaleTimeString(),
+    innerHeight:window.innerHeight,
+    docClientHeight:document.documentElement.clientHeight,
+    bodyClientHeight:document.body.clientHeight,
+    vvHeight:vv?Math.round(vv.height*100)/100:null,
+    vvOffsetTop:vv?Math.round(vv.offsetTop*100)/100:null,
+    vvScale:vv?vv.scale:null,
+    cssVh:Math.round(_probeHeight('vh')*100)/100,
+    cssDvh:Math.round(_probeHeight('dvh')*100)/100,
+    cssSvh:Math.round(_probeHeight('svh')*100)/100,
+    safeBottomPx:Math.round(_probeSafeBottom()*100)/100,
+    displayMode:window.matchMedia('(display-mode: standalone)').matches?'standalone':'browser',
+    appBottom:Math.round(appRect.bottom*100)/100,
+    navBottom:navRect?Math.round(navRect.bottom*100)/100:null,
+    // chinPx: gap between the real bottom of the screen and where the
+    // nav actually ends. Should be ~0. This is the number to watch.
+    chinPx:navRect?Math.round((window.innerHeight-navRect.bottom)*100)/100:null
+  };
+}
+
+let _vpRAF=null;
+function _scheduleViewportFix(reason){
+  if(_vpRAF) cancelAnimationFrame(_vpRAF);
+  _vpRAF=requestAnimationFrame(()=>{ _vpRAF=null; _applyViewportFix(reason); });
+}
+function _applyViewportFix(reason){
+  const vv=window.visualViewport;
+  const h=vv?vv.height:window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', h+'px');
+  const snap=_measureViewport(reason);
+  _vp.last=snap;
+  _vp.history.push(snap);
+  if(_vp.history.length>40) _vp.history.shift();
+  if(window.__vpDebugOn){ console.log('[viewport]',reason,snap); _renderVpDebug(); }
+}
+
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', ()=>_scheduleViewportFix('vv-resize'));
+  window.visualViewport.addEventListener('scroll',  ()=>_scheduleViewportFix('vv-scroll'));
+}
+window.addEventListener('resize', ()=>_scheduleViewportFix('win-resize'));
+window.addEventListener('orientationchange', ()=>_scheduleViewportFix('orientationchange'));
+window.addEventListener('pageshow', e=>_scheduleViewportFix(e.persisted?'pageshow-bfcache':'pageshow'));
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _scheduleViewportFix('visible'); });
+// iOS often leaves geometry stale for a beat right after the keyboard
+// closes — check again shortly after any field loses focus.
+document.addEventListener('focusout', e=>{
+  if(e.target && e.target.matches && e.target.matches('input,textarea,select')){
+    setTimeout(()=>_scheduleViewportFix('input-blur'), 60);
+    setTimeout(()=>_scheduleViewportFix('input-blur-settle'), 350);
+  }
+}, true);
+
+// ── Debug HUD ──────────────────────────────
+// Hidden by default. Tap the home-screen candy logo 5× within 2s to
+// toggle it. Use this to capture one snapshot while the chin is
+// visible and one right after (or after restart) and diff them —
+// whichever field differs is the one that's going stale.
+let _logoTaps=[];
+function _handleLogoTap(){
+  const now=Date.now();
+  _logoTaps=_logoTaps.filter(t=>now-t<2000);
+  _logoTaps.push(now);
+  if(_logoTaps.length>=5){ _logoTaps=[]; _toggleVpDebug(); }
+}
+function _toggleVpDebug(){
+  window.__vpDebugOn=!window.__vpDebugOn;
+  let hud=document.getElementById('vp-debug-hud');
+  if(!window.__vpDebugOn){ if(hud) hud.style.display='none'; return; }
+  if(!hud){ hud=_buildVpDebugHud(); }
+  hud.style.display='block';
+  _scheduleViewportFix('debug-opened');
+}
+function _buildVpDebugHud(){
+  const hud=document.createElement('div');
+  hud.id='vp-debug-hud';
+  hud.style.cssText='position:fixed;left:8px;right:8px;top:calc(var(--safe-top) + 8px);z-index:99999;background:rgba(0,0,0,.88);color:#7ecfad;font:10px/1.5 "Geist Mono",monospace;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);pointer-events:auto;max-height:70vh;overflow:auto;white-space:pre-wrap';
+  hud.innerHTML='<div id="vp-debug-body">measuring…</div>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+    '<button id="vp-debug-copy" style="flex:1;background:#242430;color:#eeedf4;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:6px;font:10px \'Geist Mono\',monospace">Copy snapshot</button>'+
+    '<button id="vp-debug-close" style="flex:1;background:#242430;color:#eeedf4;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:6px;font:10px \'Geist Mono\',monospace">Close</button>'+
+    '</div>';
+  document.body.appendChild(hud);
+  hud.querySelector('#vp-debug-close').addEventListener('click', _toggleVpDebug);
+  hud.querySelector('#vp-debug-copy').addEventListener('click', ()=>{
+    const text=JSON.stringify(_vp.last,null,2);
+    if(navigator.clipboard) navigator.clipboard.writeText(text).then(()=>showToast('📋 Snapshot copied'));
+  });
+  return hud;
+}
+function _renderVpDebug(){
+  const body=document.getElementById('vp-debug-body');
+  if(!body||!_vp.last) return;
+  const s=_vp.last;
+  body.textContent =
+`last event: ${s.reason} @ ${s.t}
+displayMode: ${s.displayMode}
+window.innerHeight: ${s.innerHeight}
+docEl.clientHeight: ${s.docClientHeight}
+body.clientHeight: ${s.bodyClientHeight}
+visualViewport.height: ${s.vvHeight}
+visualViewport.offsetTop: ${s.vvOffsetTop}
+visualViewport.scale: ${s.vvScale}
+CSS 100vh: ${s.cssVh}
+CSS 100dvh: ${s.cssDvh}
+CSS 100svh: ${s.cssSvh}
+env(safe-area-inset-bottom): ${s.safeBottomPx}
+#app bottom edge: ${s.appBottom}
+.bottom-nav bottom edge: ${s.navBottom}
+chin (screen bottom − nav bottom): ${s.chinPx}px`;
+};
+
+// ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 loadData();
@@ -2636,6 +2808,9 @@ updateNotifBadge();
 _checkBackupNudge();
 _initPills();
 if('Notification' in window) document.getElementById('notif-status').textContent='Permission: '+Notification.permission;
+_applyViewportFix('init');
+const _logoEl=document.querySelector('#view-home .logo-icon');
+if(_logoEl) _logoEl.addEventListener('click', _handleLogoTap);
 
 // Show onboarding for fresh installs
 if(!data.settings._onboardingDone && !data.flavors.length) {
